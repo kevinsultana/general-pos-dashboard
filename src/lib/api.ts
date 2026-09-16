@@ -154,12 +154,26 @@ export const api = {
     apiRequest('/promotions', { method: 'POST', body: JSON.stringify(payload) }),
   togglePromotion: (id: string, active: boolean) =>
     apiRequest(`/promotions/${id}`, { method: 'PATCH', body: JSON.stringify({ active }) }),
+  deletePromotion: (id: string) =>
+    apiRequest(`/promotions/${id}`, { method: 'DELETE' }),
 
-  // Staff & Roles
+  // Staff & Roles (RBAC)
   getUsers: () => apiRequest('/users'),
   createUser: (payload: any) =>
     apiRequest('/users', { method: 'POST', body: JSON.stringify(payload) }),
+  updateUser: (id: string, payload: any) =>
+    apiRequest(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   getRoles: () => apiRequest('/roles'),
+  getPermissions: () => apiRequest('/roles/permissions'),
+  createRole: (payload: { name: string; description?: string; permissions: string[] }) =>
+    apiRequest('/roles', { method: 'POST', body: JSON.stringify(payload) }),
+  updateRole: (id: string, payload: { name?: string; description?: string; permissions?: string[] }) =>
+    apiRequest(`/roles/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteRole: (id: string) =>
+    apiRequest(`/roles/${id}`, { method: 'DELETE' }),
+
+  // Cloud Sync Status
+  getSyncStatus: () => apiRequest('/sync/status'),
 
   // Subscription Entitlement
   getSubscription: () => apiRequest('/subscription'),
@@ -184,6 +198,9 @@ export const api = {
   getPaymentMethods: () => apiRequest('/payment-methods'),
   updatePaymentMethod: (id: string, payload: { active?: boolean; name?: string; requiresReference?: boolean }) =>
     apiRequest(`/payment-methods/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+
+  // Printers
+  getPrinters: (role?: string) => apiRequest(`/printers${role ? `?role=${role}` : ''}`),
 
   // Health Heartbeat
   checkHealth: () => apiRequest('/health'),

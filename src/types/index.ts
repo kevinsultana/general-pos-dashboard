@@ -1,6 +1,24 @@
 export type SubscriptionPlan = 'FREE' | 'PAID' | 'PRO';
 export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
 
+export interface Permission {
+  id: string;
+  key: string;
+  description: string;
+  category: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description?: string | null;
+  isSystem: boolean;
+  userCount?: number;
+  permissions: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -12,6 +30,26 @@ export interface User {
   };
   active: boolean;
   storeId: string;
+}
+
+export interface SyncStatusData {
+  totalEvents: number;
+  deviceCount: number;
+  devices: Array<{
+    deviceId: string;
+    cursor: string;
+    updatedAt: string;
+  }>;
+  recentEvents: Array<{
+    id: string;
+    deviceId: string;
+    entityType: string;
+    entityId: string;
+    operation: string;
+    status: string;
+    createdAt: string;
+    syncedAt?: string | null;
+  }>;
 }
 
 export interface Store {
@@ -50,14 +88,33 @@ export interface Customer {
   transactions?: Array<{ id: string; total: number; createdAt: string }>;
 }
 
+export type PaymentMethodType = 'CASH' | 'QRIS' | 'TRANSFER' | 'DEBIT' | 'CREDIT';
+
 export interface PaymentMethod {
   id: string;
   storeId: string;
   name: string;
-  type: 'CASH' | 'QRIS' | 'TRANSFER' | 'DEBIT' | 'CREDIT';
+  type: PaymentMethodType;
   active: boolean;
   requiresReference: boolean;
   sortOrder: number;
+}
+
+export interface Printer {
+  id: string;
+  storeId: string;
+  name: string;
+  connectionType: 'BLUETOOTH' | 'USB' | 'NETWORK';
+  addressReference?: string | null;
+  paperSize: 'PAPER_58MM' | 'PAPER_80MM';
+  role: 'RECEIPT' | 'KITCHEN' | 'BOTH';
+  receiptCopies: number;
+  kitchenCopies: number;
+  autoPrint: boolean;
+  active: boolean;
+  configuration?: Record<string, any> | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 
@@ -129,20 +186,55 @@ export interface TransactionItem {
   total: number;
 }
 
+export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'VOIDED';
+
 export interface Payment {
   id: string;
   paymentMethodId: string;
-  paymentMethod?: { id: string; name: string; type: string };
+  paymentMethod?: { id: string; name: string; type: PaymentMethodType | string };
   amount: number;
-  status: string;
+  status: PaymentStatus;
   paidAt: string;
 }
+
+export type TransactionStatus =
+  | 'DRAFT'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'PARTIALLY_REFUNDED'
+  | 'REFUNDED';
+
+export interface RefundItem {
+  id: string;
+  refundId: string;
+  transactionItemId: string;
+  quantity: number;
+  amount: number;
+  transactionItem?: TransactionItem;
+}
+
+export type RefundStatus = 'COMPLETED' | 'VOIDED';
+
+export interface Refund {
+  id: string;
+  transactionId: string;
+  amount: number;
+  reason: string;
+  status: RefundStatus;
+  createdAt: string;
+  createdBy?: { id?: string; displayName: string; username?: string };
+  items?: RefundItem[];
+}
+
+export type OrderType = 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY' | 'ONLINE';
 
 export interface Transaction {
   id: string;
   storeId: string;
   transactionNumber: string;
-  status: 'COMPLETED' | 'CANCELLED';
+  status: TransactionStatus;
+  orderType?: OrderType | null;
+  queueNumber?: string | null;
   subtotal: number;
   discountTotal: number;
   roundingAmount: number;
@@ -151,8 +243,10 @@ export interface Transaction {
   createdAt: string;
   completedAt?: string | null;
   cancelledAt?: string | null;
+  refundedAt?: string | null;
   items: TransactionItem[];
   payments: Payment[];
+  refunds?: Refund[];
   customer?: { id: string; name: string; phone?: string | null } | null;
   createdBy?: { displayName: string; username: string };
   cancelledBy?: { displayName: string };

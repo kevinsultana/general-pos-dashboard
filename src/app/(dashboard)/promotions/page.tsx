@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { BadgePercent, Plus, CheckCircle, XCircle, Tag, Sparkles } from 'lucide-react';
+import { BadgePercent, Plus, CheckCircle, XCircle, Tag, Sparkles, Trash2 } from 'lucide-react';
 import { Topbar } from '../../../components/Topbar';
 import { Modal } from '../../../components/Modal';
 import { api } from '../../../lib/api';
@@ -74,6 +74,16 @@ export default function PromotionsPage() {
     }
   };
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Hapus promosi "${name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      await api.deletePromotion(id);
+      await loadPromotions();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menghapus promosi');
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       <Topbar
@@ -140,7 +150,16 @@ export default function PromotionsPage() {
 
                   <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
                     <span className="capitalize">{typeLabel}</span>
-                    <span>Toko Utama</span>
+                    <div className="flex items-center space-x-2">
+                      <span>Toko Utama</span>
+                      <button
+                        onClick={() => handleDelete(p.id, p.name)}
+                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition"
+                        title="Hapus Promosi"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
