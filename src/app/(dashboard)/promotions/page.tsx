@@ -40,12 +40,22 @@ export default function PromotionsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const isFixed = form.discountType === 'FIXED' || form.discountType === 'FIXED_AMOUNT';
+      const type = isFixed ? 'FIXED_AMOUNT' : 'PERCENTAGE';
+      const val = parseFloat(form.discountValue) || 0;
+      const minSpend = parseFloat(form.minSpend) || 0;
+
       await api.createPromotion({
         name: form.name,
-        code: form.code || undefined,
-        discountType: form.discountType,
-        discountValue: parseFloat(form.discountValue) || 0,
-        minSpend: parseFloat(form.minSpend) || 0,
+        code: form.code ? form.code.trim().toUpperCase() : undefined,
+        type,
+        value: val,
+        minimumPurchase: minSpend,
+        startAt: new Date().toISOString(),
+        endAt: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+        discountType: type,
+        discountValue: val,
+        minSpend: minSpend,
       });
       setIsOpenAdd(false);
       setForm({ name: '', code: '', discountType: 'PERCENTAGE', discountValue: '', minSpend: '' });
@@ -93,44 +103,48 @@ export default function PromotionsPage() {
               Memuat promosi...
             </div>
           ) : promotions.length > 0 ? (
-            promotions.map((p) => (
-              <div key={p.id} className="glass-card p-5 flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono font-bold text-xs">
-                      {p.code || 'PROMO-OTOMATIS'}
-                    </span>
-                    <button
-                      onClick={() => handleToggle(p.id, p.active)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition ${
-                        p.active
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-slate-800 text-slate-500 border border-slate-700'
-                      }`}
-                    >
-                      {p.active ? 'Aktif' : 'Non-aktif'}
-                    </button>
+            promotions.map((p) => {
+              const isPercentage = (p.discountType || p.type) === 'PERCENTAGE';
+              const val = p.discountValue ?? p.value ?? 0;
+              const minSpend = p.minSpend ?? p.minimumPurchase ?? 0;
+              const typeLabel = isPercentage ? 'Persentase' : 'Nominal Tetap';
+              return (
+                <div key={p.id} className="glass-card p-5 flex flex-col justify-between space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono font-bold text-xs">
+                        {p.code || 'PROMO-OTOMATIS'}
+                      </span>
+                      <button
+                        onClick={() => handleToggle(p.id, p.active)}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition ${
+                          p.active
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-slate-800 text-slate-500 border border-slate-700'
+                        }`}
+                      >
+                        {p.active ? 'Aktif' : 'Non-aktif'}
+                      </button>
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-100 mt-3">{p.name}</h4>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Nilai Diskon:{' '}
+                      <strong className="text-emerald-400 font-mono">
+                        {isPercentage ? `${val}%` : formatRupiah(val)}
+                      </strong>
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Min. Belanja: {formatRupiah(minSpend)}
+                    </p>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-100 mt-3">{p.name}</h4>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Nilai Diskon:{' '}
-                    <strong className="text-emerald-400 font-mono">
-                      {p.discountType === 'PERCENTAGE'
-                        ? `${p.discountValue}%`
-                        : formatRupiah(p.discountValue)}
-                    </strong>
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Min. Belanja: {formatRupiah(p.minSpend)}
-                  </p>
-                </div>
 
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="capitalize">{p.discountType.toLowerCase()}</span>
-                  <span>Toko Utama</span>
+                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                    <span className="capitalize">{typeLabel}</span>
+                    <span>Toko Utama</span>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="col-span-full py-12 text-center text-slate-500 text-xs">
               Belum ada promosi yang dibuat
@@ -174,7 +188,7 @@ export default function PromotionsPage() {
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-100"
               >
                 <option value="PERCENTAGE">Persentase (%)</option>
-                <option value="FIXED">Nominal Tetap (Rp)</option>
+                <option value="FIXED_AMOUNT">Nominal Tetap (Rp)</option>
               </select>
             </div>
             <div>

@@ -163,10 +163,15 @@ export interface Promotion {
   storeId: string;
   name: string;
   code?: string | null;
-  discountType: 'PERCENTAGE' | 'FIXED';
-  discountValue: number;
-  minSpend: number;
+  type?: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FIXED';
+  discountType?: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FIXED';
+  value?: number;
+  discountValue?: number;
+  minimumPurchase?: number | null;
+  minSpend?: number;
   active: boolean;
+  startAt?: string | null;
+  endAt?: string | null;
   startDate?: string | null;
   endDate?: string | null;
 }

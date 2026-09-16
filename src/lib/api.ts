@@ -153,7 +153,7 @@ export const api = {
   createPromotion: (payload: any) =>
     apiRequest('/promotions', { method: 'POST', body: JSON.stringify(payload) }),
   togglePromotion: (id: string, active: boolean) =>
-    apiRequest(`/promotions/${id}`, { method: 'PUT', body: JSON.stringify({ active }) }),
+    apiRequest(`/promotions/${id}`, { method: 'PATCH', body: JSON.stringify({ active }) }),
 
   // Staff & Roles
   getUsers: () => apiRequest('/users'),
