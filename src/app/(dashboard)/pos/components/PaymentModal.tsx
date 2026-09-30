@@ -28,27 +28,32 @@ export function PaymentModal({
   onClose,
   onSuccess,
 }: PaymentModalProps) {
+  const numTotal = Number(total) || 0;
+  const numSubtotal = Number(subtotal) || 0;
+  const numDiscountTotal = Number(discountTotal) || 0;
+
   const [method, setMethod] = useState<'CASH' | 'QRIS' | 'TRANSFER'>('CASH');
-  const [cashTendered, setCashTendered] = useState<number>(total);
+  const [cashTendered, setCashTendered] = useState<number>(numTotal);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    setCashTendered(total);
-  }, [total]);
+    setCashTendered(numTotal);
+  }, [numTotal]);
 
   if (!isOpen) return null;
 
-  const change = Math.max(0, cashTendered - total);
-  const isCashValid = method !== 'CASH' || cashTendered >= total;
+  const numTendered = Number(cashTendered) || 0;
+  const change = Math.max(0, numTendered - numTotal);
+  const isCashValid = method !== 'CASH' || numTendered >= numTotal;
 
   const quickAmounts = [
-    { label: 'Uang Pas', value: total },
+    { label: 'Uang Pas', value: numTotal },
     { label: 'Rp 20.000', value: 20000 },
     { label: 'Rp 50.000', value: 50000 },
     { label: 'Rp 100.000', value: 100000 },
     { label: 'Rp 200.000', value: 200000 },
-  ].filter((q) => q.value >= total || q.label === 'Uang Pas');
+  ].filter((q) => q.value >= numTotal || q.label === 'Uang Pas');
 
   const handleProcessPayment = async () => {
     if (!isCashValid) return;
@@ -58,26 +63,26 @@ export function PaymentModal({
     try {
       const payload = {
         customerId: customer?.id || null,
-        subtotal,
-        discountTotal,
-        total,
+        subtotal: numSubtotal,
+        discountTotal: numDiscountTotal,
+        total: numTotal,
         items: items.map((it) => ({
           productId: it.productId,
           variantId: it.variantId || null,
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
+          quantity: Number(it.quantity) || 1,
+          unitPrice: Number(it.unitPrice) || 0,
           discountAmount: 0,
-          subtotal: it.subtotal,
-          total: it.total,
+          subtotal: Number(it.subtotal) || 0,
+          total: Number(it.total) || 0,
         })),
         payments: [
           {
             paymentMethodId: method,
-            amount: method === 'CASH' ? cashTendered : total,
+            amount: method === 'CASH' ? numTendered : numTotal,
             roundingAmount: 0,
             metadata: {
               paymentType: method,
-              amountTendered: method === 'CASH' ? cashTendered : total,
+              amountTendered: method === 'CASH' ? numTendered : numTotal,
               change: method === 'CASH' ? change : 0,
             },
           },

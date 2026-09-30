@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Barcode, Package } from 'lucide-react';
+import { Search, Barcode, Package, X } from 'lucide-react';
 import { Product, Category, ProductVariant } from '../../../../types';
 import { formatRupiah } from '../../../../lib/formatters';
 
@@ -20,6 +20,7 @@ export function ProductCatalogGrid({
 }: ProductCatalogGridProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [variantModalProduct, setVariantModalProduct] = useState<Product | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Focus search input on mount for barcode scanner readiness
@@ -49,7 +50,13 @@ export function ProductCatalogGrid({
         const matchedVariant = matchedProduct.variants?.find(
           (v) => (v.barcode && v.barcode.toLowerCase() === q) || (v.sku && v.sku.toLowerCase() === q)
         );
-        onSelectProduct(matchedProduct, matchedVariant || null);
+        if (matchedVariant) {
+          onSelectProduct(matchedProduct, matchedVariant);
+        } else if (matchedProduct.variants && matchedProduct.variants.length > 0) {
+          setVariantModalProduct(matchedProduct);
+        } else {
+          onSelectProduct(matchedProduct, null);
+        }
         setSearchQuery('');
       }
     }
@@ -69,6 +76,14 @@ export function ProductCatalogGrid({
     );
     return matchName || matchSku || matchBarcode || matchVariant;
   });
+
+  const handleProductClick = (product: Product) => {
+    if (product.variants && product.variants.length > 0) {
+      setVariantModalProduct(product);
+    } else {
+      onSelectProduct(product, null);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0d121f] border-r border-slate-800">
@@ -137,12 +152,14 @@ export function ProductCatalogGrid({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
             {filteredProducts.map((product) => {
-              const isOutOfStock = product.stock <= 0;
+              const productStock = Number(product.stock) || 0;
+              const hasVariants = product.variants && product.variants.length > 0;
+              const isOutOfStock = !hasVariants && productStock <= 0;
               return (
                 <button
                   key={product.id}
                   disabled={isOutOfStock}
-                  onClick={() => onSelectProduct(product, null)}
+                  onClick={() => handleProductClick(product)}
                   className={`text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${
                     isOutOfStock
                       ? 'bg-slate-900/40 border-slate-800/60 opacity-60 cursor-not-allowed'
@@ -158,12 +175,12 @@ export function ProductCatalogGrid({
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                           isOutOfStock
                             ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                            : product.stock <= 5
+                            : productStock <= 5 && !hasVariants
                             ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                             : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         }`}
                       >
-                        {isOutOfStock ? 'Habis' : `Stok: ${product.stock}`}
+                        {isOutOfStock ? 'Habis' : hasVariants ? 'Varian' : `Stok: ${productStock}`}
                       </span>
                     </div>
                     <h3 className="font-semibold text-slate-100 text-sm line-clamp-2 leading-tight">
@@ -178,9 +195,9 @@ export function ProductCatalogGrid({
                     <span className="text-sm font-bold text-slate-100">
                       {formatRupiah(product.sellingPrice)}
                     </span>
-                    {product.variants && product.variants.length > 0 && (
-                      <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">
-                        +{product.variants.length} Varian
+                    {hasVariants && (
+                      <span className="text-[10px] bg-slate-800 text-indigo-300 font-semibold px-1.5 py-0.5 rounded border border-slate-700">
+                        +{product.variants!.length} Varian
                       </span>
                     )}
                   </div>
@@ -190,6 +207,60 @@ export function ProductCatalogGrid({
           </div>
         )}
       </div>
+
+      {/* Variant Selection Modal */}
+      {variantModalProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-100 text-sm">Pilih Varian</h3>
+                <p className="text-xs text-indigo-400 mt-0.5">{variantModalProduct.name}</p>
+              </div>
+              <button
+                onClick={() => setVariantModalProduct(null)}
+                className="text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
+              {variantModalProduct.variants?.map((v) => {
+                const varStock = Number(v.stock) || 0;
+                const varOutOfStock = varStock <= 0;
+                return (
+                  <button
+                    key={v.id}
+                    disabled={varOutOfStock}
+                    onClick={() => {
+                      onSelectProduct(variantModalProduct, v);
+                      setVariantModalProduct(null);
+                    }}
+                    className={`w-full p-3 rounded-xl border flex items-center justify-between text-left transition-all ${
+                      varOutOfStock
+                        ? 'bg-slate-900/40 border-slate-800/60 opacity-60 cursor-not-allowed'
+                        : 'bg-slate-900 border-slate-800 hover:border-indigo-500/80 hover:bg-slate-850 cursor-pointer'
+                    }`}
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-100">{v.name}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Stok: <span className={varOutOfStock ? 'text-rose-400' : 'text-slate-300'}>{varStock}</span>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-indigo-400">
+                        {formatRupiah(v.sellingPrice)}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

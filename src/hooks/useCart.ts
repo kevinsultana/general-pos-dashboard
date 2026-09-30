@@ -24,9 +24,10 @@ export function useCart() {
   const [notes, setNotes] = useState<string>('');
 
   const addToCart = useCallback((product: Product, variant?: ProductVariant | null) => {
-    const effectiveId = variant ? variant.id : product.id;
-    const unitPrice = variant ? variant.sellingPrice : product.sellingPrice;
-    const stock = variant ? variant.stock : product.stock;
+    const rawPrice = variant ? variant.sellingPrice : product.sellingPrice;
+    const rawStock = variant ? variant.stock : product.stock;
+    const unitPrice = Number(rawPrice) || 0;
+    const stock = Number(rawStock) || 0;
     const itemName = variant ? `${product.name} (${variant.name})` : product.name;
     const itemSku = variant ? variant.sku || product.sku : product.sku;
     const itemBarcode = variant ? variant.barcode || product.barcode : product.barcode;
@@ -38,16 +39,23 @@ export function useCart() {
 
       if (existingIdx >= 0) {
         const existing = prev[existingIdx];
-        if (existing.quantity >= stock) {
+        const currentQty = Number(existing.quantity) || 0;
+        const currentStock = Number(existing.stock) || stock;
+        const currentUnitPrice = Number(existing.unitPrice) || unitPrice;
+
+        if (currentQty >= currentStock) {
           return prev; // stock cap reached
         }
         const updated = [...prev];
-        const newQty = existing.quantity + 1;
+        const newQty = currentQty + 1;
+        const newTotal = newQty * currentUnitPrice;
         updated[existingIdx] = {
           ...existing,
           quantity: newQty,
-          subtotal: newQty * existing.unitPrice,
-          total: newQty * existing.unitPrice,
+          unitPrice: currentUnitPrice,
+          subtotal: newTotal,
+          total: newTotal,
+          stock: currentStock,
         };
         return updated;
       }
@@ -72,21 +80,27 @@ export function useCart() {
     });
   }, []);
 
-  const updateQuantity = useCallback((productId: string, variantId: string | null | undefined, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, variantId: string | null | undefined, quantity: number | string) => {
+    const targetQty = Number(quantity) || 0;
     setItems((prev) => {
-      if (quantity <= 0) {
+      if (targetQty <= 0) {
         return prev.filter(
           (it) => !(it.productId === productId && (variantId ? it.variantId === variantId : !it.variantId))
         );
       }
       return prev.map((it) => {
         if (it.productId === productId && (variantId ? it.variantId === variantId : !it.variantId)) {
-          const finalQty = Math.min(quantity, it.stock);
+          const unitPrice = Number(it.unitPrice) || 0;
+          const maxStock = Number(it.stock) || 0;
+          const finalQty = Math.min(targetQty, maxStock);
+          const newTotal = finalQty * unitPrice;
           return {
             ...it,
             quantity: finalQty,
-            subtotal: finalQty * it.unitPrice,
-            total: finalQty * it.unitPrice,
+            unitPrice,
+            stock: maxStock,
+            subtotal: newTotal,
+            total: newTotal,
           };
         }
         return it;
@@ -108,17 +122,18 @@ export function useCart() {
     setNotes('');
   }, []);
 
-  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+  const subtotal = items.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
 
   let discountTotal = 0;
-  if (discountType === 'PERCENTAGE' && discountValue > 0) {
-    discountTotal = Math.round((subtotal * Math.min(100, discountValue)) / 100);
-  } else if (discountType === 'FIXED_AMOUNT' && discountValue > 0) {
-    discountTotal = Math.min(subtotal, discountValue);
+  const numDiscVal = Number(discountValue) || 0;
+  if (discountType === 'PERCENTAGE' && numDiscVal > 0) {
+    discountTotal = Math.round((subtotal * Math.min(100, numDiscVal)) / 100);
+  } else if (discountType === 'FIXED_AMOUNT' && numDiscVal > 0) {
+    discountTotal = Math.min(subtotal, numDiscVal);
   }
 
   const total = Math.max(0, subtotal - discountTotal);
-  const totalItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalItemCount = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
   return {
     items,

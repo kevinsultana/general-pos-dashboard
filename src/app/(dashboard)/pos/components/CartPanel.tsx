@@ -131,7 +131,7 @@ export function CartPanel({
                 {/* Quantity modifier */}
                 <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg p-0.5">
                   <button
-                    onClick={() => onUpdateQuantity(item.productId, item.variantId, item.quantity - 1)}
+                    onClick={() => onUpdateQuantity(item.productId, item.variantId, (Number(item.quantity) || 0) - 1)}
                     className="w-6 h-6 flex items-center justify-center text-slate-300 hover:bg-slate-800 rounded transition-colors cursor-pointer"
                   >
                     <Minus className="w-3 h-3" />
@@ -140,8 +140,8 @@ export function CartPanel({
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() => onUpdateQuantity(item.productId, item.variantId, item.quantity + 1)}
-                    disabled={item.quantity >= item.stock}
+                    onClick={() => onUpdateQuantity(item.productId, item.variantId, (Number(item.quantity) || 0) + 1)}
+                    disabled={(Number(item.quantity) || 0) >= (Number(item.stock) || 0)}
                     className="w-6 h-6 flex items-center justify-center text-slate-300 hover:bg-slate-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />

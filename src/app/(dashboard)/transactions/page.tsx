@@ -98,9 +98,11 @@ export default function TransactionsPage() {
         status: statusFilter || undefined,
         limit: 50,
       });
-      setTransactions(data.transactions || []);
+      const list = Array.isArray(data) ? data : (data?.transactions || []);
+      setTransactions(list);
     } catch (err) {
       console.error('Failed to load transactions:', err);
+      setTransactions([]);
     } finally {
       setIsLoading(false);
     }
