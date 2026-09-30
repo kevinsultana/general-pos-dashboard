@@ -1,8 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { api, setStoredTokens, clearStoredTokens, getStoredToken } from '../lib/api';
+import { useRouter } from 'next/navigation';
+import {
+  api,
+  setStoredTokens,
+  clearStoredTokens,
+  getStoredToken,
+  getStoredUserData,
+  setStoredUserData,
+  RegisterStorePayload,
+} from '../lib/api';
 import { User, Store, SubscriptionInfo } from '../types';
 
 interface AuthContextType {
@@ -11,6 +19,7 @@ interface AuthContextType {
   subscription: SubscriptionInfo | null;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
+  register: (payload: RegisterStorePayload) => Promise<void>;
   logout: () => void;
   refreshSubscription: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -24,19 +33,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
   const loadProfile = useCallback(async () => {
     const token = getStoredToken();
     if (!token) {
+      clearStoredTokens();
+      setUser(null);
+      setStore(null);
+      setSubscription(null);
       setIsLoading(false);
       return;
     }
 
     try {
       const meData = await api.me();
-      setUser(meData.user);
-      setStore(meData.store);
+      // Handle both structured { user: ..., store: ... } and flat { id, store, ... }
+      const resolvedUser: User | null = meData?.user || (meData?.id ? meData : null);
+      const resolvedStore: Store | null = meData?.store || meData?.user?.store || null;
+
+      if (resolvedUser) {
+        setUser(resolvedUser);
+      }
+      if (resolvedStore) {
+        setStore(resolvedStore);
+      }
+      if (resolvedUser && resolvedStore) {
+        setStoredUserData(resolvedUser, resolvedStore);
+      }
 
       // Also load subscription status
       try {
@@ -45,17 +68,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.warn('Subscription fetch warning:', err);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Session restore failed:', err);
-      clearStoredTokens();
-      setUser(null);
-      setStore(null);
+      // ONLY invalidate session if server explicitly returns 401 Unauthorized
+      const isAuthError =
+        err?.statusCode === 401 ||
+        err?.code === 'UNAUTHORIZED' ||
+        err?.code === 'INVALID_TOKEN' ||
+        err?.code === 'TOKEN_EXPIRED';
+
+      if (isAuthError) {
+        clearStoredTokens();
+        setUser(null);
+        setStore(null);
+        setSubscription(null);
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    // 1. Immediately hydrate cached user data to prevent flash or false redirect on refresh
+    const cached = getStoredUserData();
+    const token = getStoredToken();
+    if (token && cached) {
+      if (cached.user) setUser(cached.user);
+      if (cached.store) setStore(cached.store);
+    }
+
+    // 2. Fetch authoritative profile from server
     loadProfile();
   }, [loadProfile]);
 
@@ -64,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.login({ username, password });
       setStoredTokens(res.accessToken, res.refreshToken);
+      setStoredUserData(res.user, res.store);
       setUser(res.user);
       setStore(res.store);
 
@@ -73,7 +116,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSubscription(subData);
       } catch (_) {}
 
-      router.push('/');
+      router.push('/overview');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (payload: RegisterStorePayload) => {
+    setIsLoading(true);
+    try {
+      const res = await api.registerStore(payload);
+      setStoredTokens(res.accessToken, res.refreshToken);
+      setStoredUserData(res.user, res.store);
+      setUser(res.user);
+      setStore(res.store);
+
+      try {
+        const subData = await api.getSubscription();
+        setSubscription(subData);
+      } catch (_) {}
+
+      router.push('/overview');
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         subscription,
         isLoading,
         login,
+        register,
         logout,
         refreshSubscription,
         refreshUser: loadProfile,

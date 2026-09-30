@@ -15,15 +15,13 @@ import {
   Boxes,
   Receipt,
   FileText,
-  Sliders,
   CheckCircle2,
-  Medal,
 } from 'lucide-react';
-import { Topbar } from '../../components/Topbar';
-import { StatCard } from '../../components/StatCard';
-import { api } from '../../lib/api';
-import { DashboardSummary } from '../../types';
-import { formatRupiah, formatNumber, formatDate } from '../../lib/formatters';
+import { Topbar } from '@/components/Topbar';
+import { StatCard } from '@/components/StatCard';
+import { api } from '@/lib/api';
+import { DashboardSummary } from '@/types';
+import { formatRupiah, formatNumber, formatDate } from '@/lib/formatters';
 
 export default function OverviewPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -105,7 +103,7 @@ export default function OverviewPage() {
             <button
               onClick={fetchSummary}
               disabled={isLoading}
-              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition"
+              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition cursor-pointer"
               title="Segarkan Data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -199,14 +197,15 @@ export default function OverviewPage() {
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center space-x-3">
                             <span
-                              className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${idx === 0
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : idx === 1
-                                  ? 'bg-slate-300/20 text-slate-200 border border-slate-400/30'
-                                  : idx === 2
-                                    ? 'bg-amber-700/20 text-amber-400 border border-amber-700/30'
-                                    : 'bg-slate-800 text-slate-400'
-                                }`}
+                              className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${
+                                idx === 0
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  : idx === 1
+                                    ? 'bg-slate-300/20 text-slate-200 border border-slate-400/30'
+                                    : idx === 2
+                                      ? 'bg-amber-700/20 text-amber-400 border border-amber-700/30'
+                                      : 'bg-slate-800 text-slate-400'
+                              }`}
                             >
                               {idx + 1}
                             </span>

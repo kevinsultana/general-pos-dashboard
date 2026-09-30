@@ -1,15 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Store, KeyRound, User, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Store, KeyRound, User, ArrowRight, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { user, isLoading, login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.push('/overview');
+    }
+  }, [user, isLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +52,17 @@ export default function LoginPage() {
       <div className="absolute bottom-10 right-10 w-87.5 h-87.5 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
+        {/* Back Link */}
+        <div className="mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-slate-200 transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Kembali ke Beranda</span>
+          </Link>
+        </div>
+
         {/* Logo Card Header */}
         <div className="text-center mb-8">
           <div className="inline-flex p-3 rounded-2xl bg-linear-to-tr from-indigo-600 to-purple-600 shadow-xl shadow-indigo-500/25 mb-4">
@@ -130,6 +150,19 @@ export default function LoginPage() {
                 <p className="text-[10px] text-slate-400 font-mono">admin / admin123</p>
               </button>
             </div>
+          </div>
+
+          {/* Bottom Register Link */}
+          <div className="mt-6 pt-5 border-t border-slate-800 text-center">
+            <p className="text-xs text-slate-400">
+              Belum memiliki akun toko terdaftar?{' '}
+              <Link
+                href="/register"
+                className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-2 transition"
+              >
+                Daftar Toko Gratis
+              </Link>
+            </p>
           </div>
         </div>
       </div>

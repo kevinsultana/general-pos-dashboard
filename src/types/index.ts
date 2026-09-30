@@ -95,9 +95,11 @@ export interface PaymentMethod {
   storeId: string;
   name: string;
   type: PaymentMethodType;
-  active: boolean;
-  requiresReference: boolean;
-  sortOrder: number;
+  enabled: boolean;
+  active?: boolean;
+  requiresReference?: boolean;
+  configuration?: Record<string, any> | null;
+  sortOrder?: number;
 }
 
 export interface Printer {

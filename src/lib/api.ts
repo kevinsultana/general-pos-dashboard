@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 export class ApiError extends Error {
   code: string;
@@ -28,6 +28,25 @@ export function setStoredTokens(accessToken: string, refreshToken: string) {
   if (typeof window === 'undefined') return;
   localStorage.setItem('pos_access_token', accessToken);
   localStorage.setItem('pos_refresh_token', refreshToken);
+}
+
+export function getStoredUserData(): { user: any; store: any } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('pos_user_data');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUserData(user: any, store: any) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('pos_user_data', JSON.stringify({ user, store }));
+  } catch (e) {
+    console.error('Failed to save pos_user_data:', e);
+  }
 }
 
 export function clearStoredTokens() {
@@ -106,15 +125,41 @@ export async function apiRequest<T = any>(
   return data.data !== undefined ? data.data : data;
 }
 
+export interface RegisterStorePayload {
+  storeName: string;
+  ownerName?: string;
+  phone?: string;
+  address?: string;
+  email?: string;
+  username: string;
+  password: string;
+}
+
 // ── Specific API Services ──
 export const api = {
   // Auth
   login: (credentials: { username: string; password: string }) =>
     apiRequest('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  registerStore: (payload: RegisterStorePayload) =>
+    apiRequest('/auth/register-store', { method: 'POST', body: JSON.stringify(payload) }),
   me: () => apiRequest('/auth/me'),
 
-  // Dashboard KPI
+  // Dashboard KPI & Advanced Reports
   getDashboardSummary: () => apiRequest('/dashboard/summary'),
+  getSalesReport: (params?: { startDate?: string; endDate?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.startDate) q.append('startDate', params.startDate);
+    if (params?.endDate) q.append('endDate', params.endDate);
+    return apiRequest(`/reports/sales?${q.toString()}`);
+  },
+  getProductReport: (params?: { startDate?: string; endDate?: string; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.startDate) q.append('startDate', params.startDate);
+    if (params?.endDate) q.append('endDate', params.endDate);
+    if (params?.limit) q.append('limit', params.limit.toString());
+    return apiRequest(`/reports/products?${q.toString()}`);
+  },
+  getInventoryReport: () => apiRequest('/reports/inventory'),
 
   // Products & Categories
   getProducts: (categoryId?: string) =>
@@ -133,8 +178,21 @@ export const api = {
   // Inventory
   getStockMovements: (limit = 50) =>
     apiRequest(`/stock-movements?limit=${limit}`),
-  adjustStock: (payload: { productId: string; variantId?: string; quantityDelta: number; reason: string }) =>
-    apiRequest('/stock-movements', { method: 'POST', body: JSON.stringify(payload) }),
+  adjustStock: (payload: {
+    productId: string;
+    variantId?: string;
+    type?: 'INITIAL' | 'STOCK_IN' | 'SALE' | 'ADJUSTMENT' | 'CANCEL_REVERSAL' | 'REFUND_REVERSAL';
+    quantityDelta: number;
+    unitCost?: number;
+    reason: string;
+  }) =>
+    apiRequest('/stock-movements', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: payload.type || 'ADJUSTMENT',
+        ...payload,
+      }),
+    }),
 
   // Transactions
   getTransactions: (params?: { status?: string; limit?: number; offset?: number }) => {
@@ -147,6 +205,17 @@ export const api = {
   getTransaction: (id: string) => apiRequest(`/transactions/${id}`),
   cancelTransaction: (id: string, reason: string) =>
     apiRequest(`/transactions/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  refundTransaction: (
+    id: string,
+    payload: {
+      reason: string;
+      items: Array<{ transactionItemId: string; quantity: number; amount: number }>;
+    }
+  ) =>
+    apiRequest(`/transactions/${id}/refunds`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   // Promotions
   getPromotions: () => apiRequest('/promotions'),
@@ -196,11 +265,31 @@ export const api = {
 
   // Payment Methods
   getPaymentMethods: () => apiRequest('/payment-methods'),
-  updatePaymentMethod: (id: string, payload: { active?: boolean; name?: string; requiresReference?: boolean }) =>
-    apiRequest(`/payment-methods/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  updatePaymentMethod: (id: string, payload: { enabled?: boolean; active?: boolean; name?: string; configuration?: any }) => {
+    const body: any = { ...payload };
+    if (body.active !== undefined && body.enabled === undefined) {
+      body.enabled = body.active;
+    }
+    return apiRequest(`/payment-methods/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  },
 
   // Printers
   getPrinters: (role?: string) => apiRequest(`/printers${role ? `?role=${role}` : ''}`),
+  createPrinter: (payload: any) =>
+    apiRequest('/printers', { method: 'POST', body: JSON.stringify(payload) }),
+  updatePrinter: (id: string, payload: any) =>
+    apiRequest(`/printers/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deletePrinter: (id: string) =>
+    apiRequest(`/printers/${id}`, { method: 'DELETE' }),
+
+  // Audit Logs
+  getAuditLogs: (params?: { entityType?: string; userId?: string; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.entityType) q.append('entityType', params.entityType);
+    if (params?.userId) q.append('userId', params.userId);
+    if (params?.limit) q.append('limit', params.limit.toString());
+    return apiRequest(`/audit-logs?${q.toString()}`);
+  },
 
   // Health Heartbeat
   checkHealth: () => apiRequest('/health'),

@@ -12,6 +12,7 @@ import {
   XCircle,
   CreditCard,
   User,
+  RotateCcw,
 } from 'lucide-react';
 import { Topbar } from '../../../components/Topbar';
 import { Modal } from '../../../components/Modal';
@@ -75,6 +76,21 @@ export default function TransactionsPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
 
+  // Refund state
+  const [refundingTx, setRefundingTx] = useState<Transaction | null>(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundItems, setRefundItems] = useState<{
+    [itemId: string]: {
+      selected: boolean;
+      quantity: number;
+      amount: number;
+      maxQty: number;
+      unitPrice: number;
+      productName: string;
+    };
+  }>({});
+  const [isRefunding, setIsRefunding] = useState(false);
+
   const loadTransactions = async () => {
     setIsLoading(true);
     try {
@@ -103,6 +119,44 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleOpenRefund = async (tx: Transaction) => {
+    try {
+      const detail: Transaction = await api.getTransaction(tx.id);
+      const prevRefundedQty: Record<string, number> = {};
+      if (detail.refunds) {
+        for (const ref of detail.refunds) {
+          for (const it of ref.items || []) {
+            prevRefundedQty[it.transactionItemId] =
+              (prevRefundedQty[it.transactionItemId] || 0) + Number(it.quantity);
+          }
+        }
+      }
+
+      const initialItems: Record<string, any> = {};
+      for (const it of detail.items) {
+        const prev = prevRefundedQty[it.id] || 0;
+        const remaining = Math.max(0, Number(it.quantity) - prev);
+        if (remaining > 0) {
+          const unitPrice = Number(it.unitPrice);
+          initialItems[it.id] = {
+            selected: true,
+            quantity: remaining,
+            amount: remaining * unitPrice,
+            maxQty: remaining,
+            unitPrice,
+            productName: it.productNameSnapshot,
+          };
+        }
+      }
+
+      setRefundItems(initialItems);
+      setRefundReason('');
+      setRefundingTx(detail);
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyiapkan data refund');
+    }
+  };
+
   const handleConfirmCancel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cancellingTx || !cancelReason.trim()) return;
@@ -120,6 +174,44 @@ export default function TransactionsPage() {
       alert(err.message || 'Gagal membatalkan transaksi');
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleConfirmRefund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!refundingTx || !refundReason.trim()) return;
+
+    const itemsToRefund = Object.entries(refundItems)
+      .filter(([_, val]) => val.selected && val.quantity > 0)
+      .map(([id, val]) => ({
+        transactionItemId: id,
+        quantity: Number(val.quantity),
+        amount: Number(val.amount),
+      }));
+
+    if (itemsToRefund.length === 0) {
+      alert('Pilih minimal 1 item untuk direfund');
+      return;
+    }
+
+    setIsRefunding(true);
+    try {
+      await api.refundTransaction(refundingTx.id, {
+        reason: refundReason.trim(),
+        items: itemsToRefund,
+      });
+      setRefundingTx(null);
+      setRefundReason('');
+      setRefundItems({});
+      await loadTransactions();
+      if (selectedTx?.id === refundingTx.id) {
+        const updated = await api.getTransaction(refundingTx.id);
+        setSelectedTx(updated);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal memproses refund');
+    } finally {
+      setIsRefunding(false);
     }
   };
 
@@ -216,6 +308,15 @@ export default function TransactionsPage() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+                          {(t.status === 'COMPLETED' || t.status === 'PARTIALLY_REFUNDED') && (
+                            <button
+                              onClick={() => handleOpenRefund(t)}
+                              className="p-1.5 text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition"
+                              title="Refund Transaksi"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
                           {t.status === 'COMPLETED' && (
                             <button
                               onClick={() => {
@@ -395,7 +496,30 @@ export default function TransactionsPage() {
               </div>
             )}
 
-            <div className="flex justify-end pt-2">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <div className="flex items-center space-x-2">
+                {(selectedTx.status === 'COMPLETED' || selectedTx.status === 'PARTIALLY_REFUNDED') && (
+                  <button
+                    onClick={() => handleOpenRefund(selectedTx)}
+                    className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-xl font-medium transition flex items-center space-x-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Refund Transaksi</span>
+                  </button>
+                )}
+                {selectedTx.status === 'COMPLETED' && (
+                  <button
+                    onClick={() => {
+                      setCancellingTx(selectedTx);
+                      setCancelReason('');
+                    }}
+                    className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded-xl font-medium transition flex items-center space-x-1.5"
+                  >
+                    <Ban className="w-3.5 h-3.5" />
+                    <span>Batalkan</span>
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setSelectedTx(null)}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium transition"
@@ -405,6 +529,155 @@ export default function TransactionsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Refund Transaction Modal */}
+      <Modal
+        isOpen={!!refundingTx}
+        onClose={() => setRefundingTx(null)}
+        title={`Refund Transaksi: ${refundingTx?.transactionNumber || ''}`}
+        maxWidth="max-w-xl"
+      >
+        <form onSubmit={handleConfirmRefund} className="space-y-4 text-xs">
+          <p className="text-slate-300">
+            Pilih item dan jumlah kuantitas yang akan direfund. Stok barang yang direfund akan secara otomatis dipulihkan ke inventori.
+          </p>
+
+          <div className="space-y-2 border border-slate-800 rounded-xl p-3 bg-slate-900/60 max-h-60 overflow-y-auto">
+            {Object.entries(refundItems).length > 0 ? (
+              Object.entries(refundItems).map(([id, item]) => (
+                <div
+                  key={id}
+                  className={`p-2.5 rounded-lg border transition ${
+                    item.selected
+                      ? 'bg-slate-800/80 border-purple-500/40'
+                      : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={item.selected}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setRefundItems((prev) => ({
+                            ...prev,
+                            [id]: {
+                              ...prev[id],
+                              selected: checked,
+                              quantity: checked ? prev[id].maxQty : 0,
+                              amount: checked ? prev[id].maxQty * prev[id].unitPrice : 0,
+                            },
+                          }));
+                        }}
+                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-800 border-slate-700"
+                      />
+                      <span className="font-semibold text-slate-200">{item.productName}</span>
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      Maks. {item.maxQty} unit @ {formatRupiah(item.unitPrice)}
+                    </span>
+                  </div>
+
+                  {item.selected && (
+                    <div className="grid grid-cols-2 gap-3 mt-2.5 pt-2 border-t border-slate-800/80">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1">
+                          Jumlah Refund (Qty)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={item.maxQty}
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const q = Math.min(item.maxQty, Math.max(1, parseInt(e.target.value) || 1));
+                            setRefundItems((prev) => ({
+                              ...prev,
+                              [id]: {
+                                ...prev[id],
+                                quantity: q,
+                                amount: q * prev[id].unitPrice,
+                              },
+                            }));
+                          }}
+                          className="pos-input w-full px-2 py-1 text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1">
+                          Nominal Refund (Rp)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.amount}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                            setRefundItems((prev) => ({
+                              ...prev,
+                              [id]: { ...prev[id], amount: val },
+                            }));
+                          }}
+                          className="pos-input w-full px-2 py-1 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-center py-4 text-slate-400">
+                Tidak ada item tersisa yang dapat direfund pada transaksi ini.
+              </p>
+            )}
+          </div>
+
+          {/* Total Refund Summary */}
+          <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/20 flex items-center justify-between text-xs">
+            <span className="text-purple-300 font-semibold">Total Nilai Refund:</span>
+            <span className="font-mono font-bold text-sm text-purple-400">
+              {formatRupiah(
+                Object.values(refundItems)
+                  .filter((it) => it.selected)
+                  .reduce((sum, it) => sum + Number(it.amount), 0)
+              )}
+            </span>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              Alasan Pengembalian (Refund) *
+            </label>
+            <input
+              type="text"
+              required
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+              placeholder="Contoh: Barang cacat / pembeli berubah pikiran"
+              className="pos-input w-full px-3 py-2 text-xs"
+            />
+          </div>
+
+          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => setRefundingTx(null)}
+              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 transition"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isRefunding}
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white transition disabled:opacity-50 flex items-center space-x-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{isRefunding ? 'Memproses...' : 'Konfirmasi Refund'}</span>
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {/* Cancel Transaction Modal */}

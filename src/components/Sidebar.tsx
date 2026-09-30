@@ -14,6 +14,7 @@ import {
   BarChart3,
   Crown,
   Settings,
+  ShieldAlert,
   LogOut,
   Store as StoreIcon,
   Sparkles,
@@ -34,7 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     groupTitle: 'OPERASIONAL',
     items: [
-      { label: 'Ringkasan KPI', href: '/', icon: LayoutDashboard },
+      { label: 'Ringkasan KPI', href: '/overview', icon: LayoutDashboard },
       { label: 'Transaksi Kasir', href: '/transactions', icon: ReceiptText },
       { label: 'Stok & Inventori', href: '/inventory', icon: Boxes },
     ],
@@ -53,6 +54,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Laporan Finansial', href: '/reports', icon: BarChart3, badge: 'PRO' },
       { label: 'Pengaturan Toko', href: '/settings', icon: Settings },
       { label: 'Staf & Hak Akses', href: '/users', icon: Users },
+      { label: 'Audit Trail', href: '/audit', icon: ShieldAlert },
       { label: 'Paket Langganan', href: '/subscription', icon: Crown },
     ],
   },

@@ -18,6 +18,9 @@ import {
   RefreshCw,
   Laptop,
   Activity,
+  Plus,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { Topbar } from '../../../components/Topbar';
 import { api } from '../../../lib/api';
@@ -59,6 +62,21 @@ export default function SettingsPage() {
     cashRoundingEnabled: false,
     cashRoundingIncrement: 100,
     cashRoundingMode: 'ROUND_NEAREST' as 'ROUND_NEAREST' | 'ROUND_UP' | 'ROUND_DOWN',
+  });
+
+  // Printer Management Modal State
+  const [showPrinterModal, setShowPrinterModal] = useState(false);
+  const [isSavingPrinter, setIsSavingPrinter] = useState(false);
+  const [printerForm, setPrinterForm] = useState({
+    name: '',
+    connectionType: 'BLUETOOTH' as 'BLUETOOTH' | 'USB' | 'NETWORK',
+    addressReference: '',
+    paperSize: 'PAPER_58MM' as 'PAPER_58MM' | 'PAPER_80MM',
+    role: 'RECEIPT' as 'RECEIPT' | 'KITCHEN' | 'BOTH',
+    receiptCopies: 1,
+    kitchenCopies: 1,
+    autoPrint: false,
+    active: true,
   });
 
   const loadSettings = async () => {
@@ -144,14 +162,58 @@ export default function SettingsPage() {
 
   const handleTogglePayment = async (pm: PaymentMethod) => {
     try {
-      const updated = !pm.active;
-      await api.updatePaymentMethod(pm.id, { active: updated });
+      const isCurrentlyActive = pm.enabled ?? pm.active ?? false;
+      const updated = !isCurrentlyActive;
+      await api.updatePaymentMethod(pm.id, { enabled: updated });
       setPaymentMethods((prev) =>
-        prev.map((item) => (item.id === pm.id ? { ...item, active: updated } : item))
+        prev.map((item) =>
+          item.id === pm.id ? { ...item, enabled: updated, active: updated } : item
+        )
       );
       toast.info(`Metode ${pm.name} kini ${updated ? 'Aktif' : 'Nonaktif'}`);
     } catch (err: any) {
       toast.error(err.message || 'Gagal mengubah status metode pembayaran');
+    }
+  };
+
+  const handleCreatePrinter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!printerForm.name) {
+      toast.error('Nama printer wajib diisi');
+      return;
+    }
+    setIsSavingPrinter(true);
+    try {
+      const newPrinter = await api.createPrinter(printerForm);
+      setPrinters((prev) => [...prev, newPrinter]);
+      toast.success(`Printer ${newPrinter.name} berhasil ditambahkan`);
+      setShowPrinterModal(false);
+      setPrinterForm({
+        name: '',
+        connectionType: 'BLUETOOTH',
+        addressReference: '',
+        paperSize: 'PAPER_58MM',
+        role: 'RECEIPT',
+        receiptCopies: 1,
+        kitchenCopies: 1,
+        autoPrint: false,
+        active: true,
+      });
+    } catch (err: any) {
+      toast.error(err.message || 'Gagal menambahkan printer');
+    } finally {
+      setIsSavingPrinter(false);
+    }
+  };
+
+  const handleDeletePrinter = async (printerId: string, printerName: string) => {
+    if (!window.confirm(`Yakin ingin menghapus konfigurasi printer ${printerName}?`)) return;
+    try {
+      await api.deletePrinter(printerId);
+      setPrinters((prev) => prev.filter((p) => p.id !== printerId));
+      toast.info(`Printer ${printerName} telah dihapus`);
+    } catch (err: any) {
+      toast.error(err.message || 'Gagal menghapus printer');
     }
   };
 
@@ -418,30 +480,35 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {paymentMethods.map((pm) => (
-                <div
-                  key={pm.id}
-                  className={`p-3 rounded-xl border transition flex items-center justify-between ${pm.active
-                      ? 'bg-slate-900/80 border-indigo-500/40 text-slate-200'
-                      : 'bg-slate-900/30 border-slate-800/80 text-slate-500'
+              {paymentMethods.map((pm) => {
+                const isEnabled = pm.enabled ?? pm.active ?? false;
+                return (
+                  <div
+                    key={pm.id}
+                    className={`p-3 rounded-xl border transition flex items-center justify-between ${
+                      isEnabled
+                        ? 'bg-slate-900/80 border-indigo-500/40 text-slate-200'
+                        : 'bg-slate-900/30 border-slate-800/80 text-slate-500'
                     }`}
-                >
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-bold">{pm.name}</p>
-                    <p className="text-[10px] font-mono text-slate-400">{pm.type}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleTogglePayment(pm)}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition ${pm.active
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                      }`}
                   >
-                    {pm.active ? 'Aktif' : 'Nonaktif'}
-                  </button>
-                </div>
-              ))}
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold">{pm.name}</p>
+                      <p className="text-[10px] font-mono text-slate-400">{pm.type}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePayment(pm)}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition ${
+                        isEnabled
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                      }`}
+                    >
+                      {isEnabled ? 'Aktif' : 'Nonaktif'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -453,11 +520,21 @@ export default function SettingsPage() {
                 <div>
                   <h3 className="font-semibold text-slate-100 text-sm">Perangkat Printer & Format Struk</h3>
                   <p className="text-[11px] text-slate-400">
-                    Printer kasir, dapur, dan kompatibilitas konfigurasi JSON yang tersinkronisasi
+                    Printer kasir, dapur, dan konfigurasi profil cetak struk (ESC/POS)
                   </p>
                 </div>
               </div>
-              <span className="text-xs text-slate-400 font-mono">{printers.length} printer terdaftar</span>
+              <div className="flex items-center space-x-3">
+                <span className="text-xs text-slate-400 font-mono">{printers.length} printer</span>
+                <button
+                  type="button"
+                  onClick={() => setShowPrinterModal(true)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition shadow-md shadow-indigo-600/20"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Tambah Printer</span>
+                </button>
+              </div>
             </div>
 
             {printers.length > 0 ? (
@@ -485,11 +562,21 @@ export default function SettingsPage() {
                           {p.connectionType} • {p.addressReference || 'Default Port'}
                         </p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        p.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {p.active ? 'Aktif' : 'Nonaktif'}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          p.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                        }`}>
+                          {p.active ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePrinter(p.id, p.name)}
+                          className="p-1 text-slate-500 hover:text-rose-400 transition"
+                          title="Hapus printer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
@@ -686,6 +773,200 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+
+        {/* Modal Tambah Printer */}
+        {showPrinterModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="glass-card w-full max-w-lg p-6 space-y-5 border-slate-700 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center space-x-2">
+                  <Printer className="w-5 h-5 text-indigo-400" />
+                  <h3 className="font-semibold text-slate-100 text-sm">
+                    Tambah Perangkat Printer Baru
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowPrinterModal(false)}
+                  className="text-slate-400 hover:text-slate-200 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreatePrinter} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Nama Printer / Lokasi *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Printer Kasir Depan, Printer Dapur"
+                    value={printerForm.name}
+                    onChange={(e) => setPrinterForm({ ...printerForm, name: e.target.value })}
+                    className="pos-input px-3 py-2 text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Tipe Koneksi
+                    </label>
+                    <select
+                      value={printerForm.connectionType}
+                      onChange={(e: any) =>
+                        setPrinterForm({ ...printerForm, connectionType: e.target.value })
+                      }
+                      className="pos-select w-full px-3 py-2 text-xs"
+                    >
+                      <option value="BLUETOOTH">Bluetooth Thermal</option>
+                      <option value="USB">USB Cable</option>
+                      <option value="NETWORK">LAN / WiFi Network</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Alamat / IP / MAC (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="00:11:22:33:44:55 / 192.168.1.100"
+                      value={printerForm.addressReference}
+                      onChange={(e) =>
+                        setPrinterForm({ ...printerForm, addressReference: e.target.value })
+                      }
+                      className="pos-input px-3 py-2 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Peruntukan Printer (Role)
+                    </label>
+                    <select
+                      value={printerForm.role}
+                      onChange={(e: any) =>
+                        setPrinterForm({ ...printerForm, role: e.target.value })
+                      }
+                      className="pos-select w-full px-3 py-2 text-xs"
+                    >
+                      <option value="RECEIPT">Struk Kasir (Pelanggan)</option>
+                      <option value="KITCHEN">Tiket Dapur (Pesanan)</option>
+                      <option value="BOTH">Keduanya (Kasir & Dapur)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Ukuran Kertas Thermal
+                    </label>
+                    <select
+                      value={printerForm.paperSize}
+                      onChange={(e: any) =>
+                        setPrinterForm({ ...printerForm, paperSize: e.target.value })
+                      }
+                      className="pos-select w-full px-3 py-2 text-xs"
+                    >
+                      <option value="PAPER_58MM">58 mm (Standar POS Mobile)</option>
+                      <option value="PAPER_80MM">80 mm (Besar / Desktop)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Jumlah Salinan Struk Kasir
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={printerForm.receiptCopies}
+                      onChange={(e) =>
+                        setPrinterForm({
+                          ...printerForm,
+                          receiptCopies: Math.max(1, parseInt(e.target.value, 10) || 1),
+                        })
+                      }
+                      className="pos-input px-3 py-2 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Jumlah Salinan Tiket Dapur
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={printerForm.kitchenCopies}
+                      onChange={(e) =>
+                        setPrinterForm({
+                          ...printerForm,
+                          kitchenCopies: Math.max(1, parseInt(e.target.value, 10) || 1),
+                        })
+                      }
+                      className="pos-input px-3 py-2 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={printerForm.autoPrint}
+                      onChange={(e) =>
+                        setPrinterForm({ ...printerForm, autoPrint: e.target.checked })
+                      }
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-700"
+                    />
+                    <span className="text-xs text-slate-300">
+                      Otomatis cetak segera setelah transaksi dibayar selesai (Auto-Print)
+                    </span>
+                  </label>
+
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={printerForm.active}
+                      onChange={(e) =>
+                        setPrinterForm({ ...printerForm, active: e.target.checked })
+                      }
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-700"
+                    />
+                    <span className="text-xs text-slate-300">
+                      Printer aktif dan siap menerima antrean cetak
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowPrinterModal(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingPrinter}
+                    className="pos-btn-primary px-5 py-2 text-xs disabled:opacity-50"
+                  >
+                    {isSavingPrinter ? 'Menyimpan...' : 'Simpan Printer'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
