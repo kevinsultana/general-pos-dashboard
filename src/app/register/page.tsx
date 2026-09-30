@@ -106,7 +106,7 @@ export default function RegisterPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Daftarkan Toko Baru</h1>
           <p className="text-sm text-slate-400 mt-1 max-w-md mx-auto">
-            Mulai kelola bisnis UMKM Anda dengan sistem POS terintegrasi cloud & Web Dashboard PRO
+            Mulai kelola bisnis UMKM Anda dengan sistem POS offline mandiri & akses cloud opsional
           </p>
         </div>
 
@@ -269,10 +269,10 @@ export default function RegisterPage() {
             </div>
 
             {/* Included Benefits Card */}
-            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 flex items-center space-x-2.5 mt-2">
-              <Sparkles className="w-4 h-4 shrink-0 text-indigo-400" />
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center space-x-2.5 mt-2">
+              <Sparkles className="w-4 h-4 shrink-0 text-emerald-400" />
               <span>
-                Pendaftaran langsung mengaktifkan <strong>Paket PRO</strong> dengan akses Web Dashboard lengkap.
+                Pendaftaran otomatis mengaktifkan <strong>Paket FREE</strong> untuk kasir offline mandiri di Android. Anda dapat upgrade ke PRO kapan saja.
               </span>
             </div>
 

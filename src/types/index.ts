@@ -23,13 +23,24 @@ export interface User {
   id: string;
   username: string;
   displayName: string;
+  email?: string;
+  storeId: string;
+  storeName?: string;
+  tier?: SubscriptionPlan;
+  canCloudSync?: boolean;
+  stores?: Array<{
+    id: string;
+    name: string;
+    tier: SubscriptionPlan;
+    status: string;
+  }>;
   role: {
     id: string;
     name: string;
     permissions?: Array<{ permission: { key: string } }>;
   };
-  active: boolean;
-  storeId: string;
+  permissions?: string[];
+  active?: boolean;
 }
 
 export interface SyncStatusData {

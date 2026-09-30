@@ -19,11 +19,14 @@ import {
 } from 'lucide-react';
 import { Topbar } from '@/components/Topbar';
 import { StatCard } from '@/components/StatCard';
+import { FreeHubView } from '@/components/FreeHubView';
+import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { DashboardSummary } from '@/types';
 import { formatRupiah, formatNumber, formatDate } from '@/lib/formatters';
 
 export default function OverviewPage() {
+  const { isFree } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +45,12 @@ export default function OverviewPage() {
   };
 
   useEffect(() => {
-    fetchSummary();
-  }, []);
+    if (!isFree) {
+      fetchSummary();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isFree]);
 
   const totalPaymentVol =
     summary?.paymentBreakdown.reduce((acc, curr) => acc + curr.totalAmount, 0) ||
@@ -53,12 +60,20 @@ export default function OverviewPage() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <Topbar
-        title="Ringkasan Operasional & Keuangan"
-        description="Pusat analitik performa penjualan, pergerakan stok, dan transaksi toko"
+        title={isFree ? 'Free Local Hub & Panduan POS' : 'Ringkasan Operasional & Keuangan'}
+        description={
+          isFree
+            ? 'Pusat panduan kasir offline dan instalasi Android POS'
+            : 'Pusat analitik performa penjualan, pergerakan stok, dan transaksi toko'
+        }
       />
 
       <main className="p-6 space-y-6 flex-1">
-        {/* Quick Actions Bar */}
+        {isFree ? (
+          <FreeHubView />
+        ) : (
+          <>
+            {/* Quick Actions Bar */}
         <div className="glass-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
@@ -426,6 +441,8 @@ export default function OverviewPage() {
             </div>
           </div>
         </div>
+        </>
+      )}
       </main>
     </div>
   );

@@ -68,8 +68,8 @@ export default function LoginPage() {
           <div className="inline-flex p-3 rounded-2xl bg-linear-to-tr from-indigo-600 to-purple-600 shadow-xl shadow-indigo-500/25 mb-4">
             <Store className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">General POS Pro</h1>
-          <p className="text-sm text-slate-400 mt-1">Masuk ke Web Dashboard Toko Cloud Anda</p>
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">General POS</h1>
+          <p className="text-sm text-slate-400 mt-1">Masuk ke Web Dashboard Toko Anda</p>
         </div>
 
         {/* Login Glass Card */}

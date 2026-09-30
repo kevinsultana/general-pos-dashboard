@@ -17,6 +17,10 @@ interface AuthContextType {
   user: User | null;
   store: Store | null;
   subscription: SubscriptionInfo | null;
+  plan: 'FREE' | 'PAID' | 'PRO';
+  isFree: boolean;
+  isPaid: boolean;
+  isPro: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (payload: RegisterStorePayload) => Promise<void>;
@@ -162,12 +166,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const plan = (subscription?.plan || store?.subscriptionPlan || user?.tier || 'FREE') as 'FREE' | 'PAID' | 'PRO';
+  const isFree = plan === 'FREE';
+  const isPaid = plan === 'PAID';
+  const isPro = plan === 'PRO';
+
   return (
     <AuthContext.Provider
       value={{
         user,
         store,
         subscription,
+        plan,
+        isFree,
+        isPaid,
+        isPro,
         isLoading,
         login,
         register,
