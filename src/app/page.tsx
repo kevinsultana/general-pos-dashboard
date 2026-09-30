@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState } from "react";
+import Link from "next/link";
 import {
   Store,
   ArrowRight,
@@ -21,7 +21,7 @@ import {
   X,
   CloudOff,
   Cloud,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,8 +29,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#0b0f19] text-slate-100 selection:bg-indigo-500 selection:text-white relative overflow-x-hidden font-sans">
       {/* Background Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-indigo-600/15 via-purple-600/10 to-transparent blur-3xl pointer-events-none" />
-      <div className="absolute top-[800px] -left-48 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-100 bg-linear-to-b from-indigo-600/15 via-purple-600/10 to-transparent blur-3xl pointer-events-none" />
+      <div className="absolute top-200 -left-48 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-[1600px] -right-48 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* ── Top Navigation Bar ── */}
@@ -43,27 +43,43 @@ export default function LandingPage() {
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
-                <span className="font-extrabold text-slate-100 text-lg tracking-tight">General POS</span>
+                <span className="font-extrabold text-slate-100 text-lg tracking-tight">
+                  General POS
+                </span>
                 <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   Hybrid
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-medium">Sistem Kasir & Analitik UMKM</p>
+              <p className="text-[10px] text-slate-400 font-medium">
+                Sistem Kasir & Analitik UMKM
+              </p>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center space-x-8 text-xs font-medium text-slate-300">
-            <a href="#keunggulan" className="hover:text-indigo-400 transition-colors">
+            <a
+              href="#keunggulan"
+              className="hover:text-indigo-400 transition-colors"
+            >
               Keunggulan
             </a>
-            <a href="#ekosistem" className="hover:text-indigo-400 transition-colors">
+            <a
+              href="#ekosistem"
+              className="hover:text-indigo-400 transition-colors"
+            >
               Ekosistem 3 Pilar
             </a>
-            <a href="#fitur" className="hover:text-indigo-400 transition-colors">
+            <a
+              href="#fitur"
+              className="hover:text-indigo-400 transition-colors"
+            >
               Fitur Lengkap
             </a>
-            <a href="#paket" className="hover:text-indigo-400 transition-colors">
+            <a
+              href="#paket"
+              className="hover:text-indigo-400 transition-colors"
+            >
               Paket Langganan
             </a>
           </nav>
@@ -92,7 +108,11 @@ export default function LandingPage() {
               className="p-2 rounded-xl bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700"
               aria-label="Toggle Navigation"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -157,23 +177,26 @@ export default function LandingPage() {
             </span>
             <span className="font-medium">Arsitektur Hybrid UMKM</span>
             <span className="text-slate-500">•</span>
-            <span className="text-indigo-400 font-semibold">Offline-First + Cloud Sync</span>
+            <span className="text-indigo-400 font-semibold">
+              Offline-First + Cloud Sync
+            </span>
           </div>
 
           {/* Main Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-100 leading-[1.15]">
-            Solusi Kasir Pintar UMKM{' '}
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">
+            Solusi Kasir Pintar UMKM{" "}
+            <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">
               Tangguh Tanpa Internet,
-            </span>{' '}
+            </span>{" "}
             Kuat dengan Cloud.
           </h1>
 
           {/* Subtitle */}
           <p className="text-sm sm:text-base lg:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Satu ekosistem terpadu untuk Ritel, F&B, Pakaian, dan Usaha Kecil. Kasir tetap mencatat
-            transaksi kilat saat koneksi padam di aplikasi mobile, dan otomatis tersinkronisasi ke
-            Web Dashboard Pro saat online.
+            Satu ekosistem terpadu untuk Ritel, F&B, Pakaian, dan Usaha Kecil.
+            Kasir tetap mencatat transaksi kilat saat koneksi padam di aplikasi
+            mobile, dan otomatis tersinkronisasi ke Web Dashboard Pro saat
+            online.
           </p>
 
           {/* Hero CTAs */}
@@ -236,7 +259,9 @@ export default function LandingPage() {
             {/* Mock Dashboard Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-                <p className="text-[11px] text-slate-400 font-medium">Omzet Hari Ini (Real-time)</p>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Omzet Hari Ini (Real-time)
+                </p>
                 <p className="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono mt-1">
                   Rp 4.850.000
                 </p>
@@ -246,19 +271,27 @@ export default function LandingPage() {
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-                <p className="text-[11px] text-slate-400 font-medium">Struk Transaksi Selesai</p>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Struk Transaksi Selesai
+                </p>
                 <p className="text-xl sm:text-2xl font-extrabold text-indigo-400 font-mono mt-1">
                   128 Transaksi
                 </p>
-                <span className="text-[10px] text-slate-400">0 struk dibatalkan (100% konsisten)</span>
+                <span className="text-[10px] text-slate-400">
+                  0 struk dibatalkan (100% konsisten)
+                </span>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800">
-                <p className="text-[11px] text-slate-400 font-medium">Kanal Pembayaran Terbanyak</p>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Kanal Pembayaran Terbanyak
+                </p>
                 <p className="text-xl sm:text-2xl font-extrabold text-purple-400 font-mono mt-1">
                   QRIS (58%)
                 </p>
-                <span className="text-[10px] text-slate-400">Tunai 32% • Transfer 10%</span>
+                <span className="text-[10px] text-slate-400">
+                  Tunai 32% • Transfer 10%
+                </span>
               </div>
             </div>
 
@@ -270,22 +303,32 @@ export default function LandingPage() {
                     <Smartphone className="w-3.5 h-3.5 text-indigo-400" />
                     <span>Aktivitas Struk Kasir Mobile</span>
                   </h4>
-                  <span className="text-[10px] font-mono text-slate-400">Baru Saja</span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Baru Saja
+                  </span>
                 </div>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center p-2 rounded-lg bg-slate-800/50">
-                    <span className="font-mono text-slate-300">TRX-2026-0929-0042</span>
+                    <span className="font-mono text-slate-300">
+                      TRX-2026-0929-0042
+                    </span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400">
                       COMPLETED
                     </span>
-                    <span className="font-mono font-bold text-slate-200">Rp 175.000</span>
+                    <span className="font-mono font-bold text-slate-200">
+                      Rp 175.000
+                    </span>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded-lg bg-slate-800/50">
-                    <span className="font-mono text-slate-300">TRX-2026-0929-0041</span>
+                    <span className="font-mono text-slate-300">
+                      TRX-2026-0929-0041
+                    </span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400">
                       COMPLETED
                     </span>
-                    <span className="font-mono font-bold text-slate-200">Rp 82.000</span>
+                    <span className="font-mono font-bold text-slate-200">
+                      Rp 82.000
+                    </span>
                   </div>
                 </div>
               </div>
@@ -296,16 +339,22 @@ export default function LandingPage() {
                     <Boxes className="w-3.5 h-3.5 text-amber-400" />
                     <span>Manajemen HPP & Stok Terkendali</span>
                   </h4>
-                  <span className="text-[10px] text-indigo-400 font-semibold">Weighted Avg Cost</span>
+                  <span className="text-[10px] text-indigo-400 font-semibold">
+                    Weighted Avg Cost
+                  </span>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-800/40 border border-slate-700/50 text-xs space-y-1.5">
                   <div className="flex justify-between text-slate-300">
                     <span>Kopi Susu Gula Aren 250ml</span>
-                    <span className="font-mono text-emerald-400 font-semibold">Stok: 48 botol</span>
+                    <span className="font-mono text-emerald-400 font-semibold">
+                      Stok: 48 botol
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-400">
-                    HPP Modal: <strong className="text-slate-200">Rp 8.500</strong> • Jual:{' '}
-                    <strong className="text-slate-200">Rp 18.000</strong> (Margin: 52.7%)
+                    HPP Modal:{" "}
+                    <strong className="text-slate-200">Rp 8.500</strong> • Jual:{" "}
+                    <strong className="text-slate-200">Rp 18.000</strong>{" "}
+                    (Margin: 52.7%)
                   </p>
                 </div>
               </div>
@@ -315,7 +364,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── 2. Keunggulan Utama Web App & Sistem ── */}
-      <section id="keunggulan" className="py-20 border-t border-slate-800/80 bg-[#090d16]/60">
+      <section
+        id="keunggulan"
+        className="py-20 border-t border-slate-800/80 bg-[#090d16]/60"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
@@ -325,8 +377,9 @@ export default function LandingPage() {
               Mengapa UMKM Memilih General POS?
             </h2>
             <p className="text-sm text-slate-400">
-              Dirancang untuk mengatasi masalah nyata pemilik toko: internet sering putus, kasir
-              lambat, data stok selisih, dan laporan keuangan yang tidak transparan.
+              Dirancang untuk mengatasi masalah nyata pemilik toko: internet
+              sering putus, kasir lambat, data stok selisih, dan laporan
+              keuangan yang tidak transparan.
             </p>
           </div>
 
@@ -340,8 +393,9 @@ export default function LandingPage() {
                 Ketahanan Offline Murni (Offline-First)
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Kasir tidak pernah macet saat listrik padam atau internet mati. Seluruh transaksi
-                tersimpan lokal di SQLite HP/Tablet dan tersinkronisasi otomatis saat online kembali.
+                Kasir tidak pernah macet saat listrik padam atau internet mati.
+                Seluruh transaksi tersimpan lokal di SQLite HP/Tablet dan
+                tersinkronisasi otomatis saat online kembali.
               </p>
             </div>
 
@@ -354,8 +408,9 @@ export default function LandingPage() {
                 Analitik Laba Bersih & Cost Snapshot
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Setiap transaksi menyimpan harga modal saat penjualan berlangsung. Laba kotor
-                historis dijamin tidak bergeser saat harga kulakan barang di masa depan berubah.
+                Setiap transaksi menyimpan harga modal saat penjualan
+                berlangsung. Laba kotor historis dijamin tidak bergeser saat
+                harga kulakan barang di masa depan berubah.
               </p>
             </div>
 
@@ -368,8 +423,9 @@ export default function LandingPage() {
                 Audit Trail & Integritas Transaksi
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Transaksi yang selesai bersifat permanen. Setiap pembatalan struk, refund sebagian,
-                atau penyesuaian stok mencatat alasan dan jejak audit staf secara transparan.
+                Transaksi yang selesai bersifat permanen. Setiap pembatalan
+                struk, refund sebagian, atau penyesuaian stok mencatat alasan
+                dan jejak audit staf secara transparan.
               </p>
             </div>
 
@@ -382,8 +438,9 @@ export default function LandingPage() {
                 Pusat Kendali Toko Tanpa Ganggu Kasir
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Pemilik toko dapat memantau penjualan, memperbarui harga katalog, dan melihat stok
-                kapan saja dari laptop rumah tanpa perlu meminjam perangkat kasir di outlet.
+                Pemilik toko dapat memantau penjualan, memperbarui harga
+                katalog, dan melihat stok kapan saja dari laptop rumah tanpa
+                perlu meminjam perangkat kasir di outlet.
               </p>
             </div>
           </div>
@@ -401,8 +458,9 @@ export default function LandingPage() {
               Sinergi 3 Pilar: Mobile, Backend & Web Dashboard
             </h2>
             <p className="text-sm text-slate-400">
-              Tidak ada bagian yang berdiri sendiri. Seluruh komponen dirancang saling melengkapi
-              untuk menjaga kecepatan transaksi di garda depan dan akurasi laporan di belakang meja.
+              Tidak ada bagian yang berdiri sendiri. Seluruh komponen dirancang
+              saling melengkapi untuk menjaga kecepatan transaksi di garda depan
+              dan akurasi laporan di belakang meja.
             </p>
           </div>
 
@@ -414,38 +472,50 @@ export default function LandingPage() {
                   <Smartphone className="w-6 h-6" />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-lg font-bold text-slate-100">1. Mobile POS App</h3>
+                  <h3 className="text-lg font-bold text-slate-100">
+                    1. Mobile POS App
+                  </h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/20 text-indigo-300">
                     Flutter
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  Aplikasi kasir di meja pembayaran dengan navigasi cepat, respons sentuh kilat, dan
-                  keandalan tinggi.
+                  Aplikasi kasir di meja pembayaran dengan navigasi cepat,
+                  respons sentuh kilat, dan keandalan tinggi.
                 </p>
 
                 <ul className="mt-5 space-y-2.5 text-xs text-slate-300">
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Printer Thermal Bluetooth ESC/POS (kertas 58mm & 80mm).</span>
+                    <span>
+                      Printer Thermal Bluetooth ESC/POS (kertas 58mm & 80mm).
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Barcode scanner kamera & dukungan barcode fisik CODE 128.</span>
+                    <span>
+                      Barcode scanner kamera & dukungan barcode fisik CODE 128.
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Mode Resto: Dine-in, Takeaway, dan cetak Kitchen Order Ticket.</span>
+                    <span>
+                      Mode Resto: Dine-in, Takeaway, dan cetak Kitchen Order
+                      Ticket.
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Simpan draft / parkir pesanan saat antrean menumpuk.</span>
+                    <span>
+                      Simpan draft / parkir pesanan saat antrean menumpuk.
+                    </span>
                   </li>
                 </ul>
               </div>
 
               <div className="pt-4 border-t border-slate-800 text-[11px] text-slate-400">
-                Penyimpanan lokal dengan <strong className="text-indigo-400">Drift SQLite</strong>
+                Penyimpanan lokal dengan{" "}
+                <strong className="text-indigo-400">Drift SQLite</strong>
               </div>
             </div>
 
@@ -456,38 +526,52 @@ export default function LandingPage() {
                   <Database className="w-6 h-6" />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-lg font-bold text-slate-100">2. Sync Engine & REST API</h3>
+                  <h3 className="text-lg font-bold text-slate-100">
+                    2. Sync Engine & REST API
+                  </h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-500/20 text-purple-300">
                     Express & Prisma
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  Mesin sinkronisasi data cerdas berbasis event unik yang menjamin data aman dan
-                  tidak pernah berulang.
+                  Mesin sinkronisasi data cerdas berbasis event unik yang
+                  menjamin data aman dan tidak pernah berulang.
                 </p>
 
                 <ul className="mt-5 space-y-2.5 text-xs text-slate-300">
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Idempotent Sync: Kirim ulang event tidak menduplikasi penjualan.</span>
+                    <span>
+                      Idempotent Sync: Kirim ulang event tidak menduplikasi
+                      penjualan.
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Transaksi Atomik: Pembayaran, struk, dan stok berkurang serentak.</span>
+                    <span>
+                      Transaksi Atomik: Pembayaran, struk, dan stok berkurang
+                      serentak.
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Role-Based Access Control (RBAC): Owner, Admin, Kasir.</span>
+                    <span>
+                      Role-Based Access Control (RBAC): Owner, Admin, Kasir.
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Pencatatan Audit Trail otomatis untuk seluruh aksi sensitif.</span>
+                    <span>
+                      Pencatatan Audit Trail otomatis untuk seluruh aksi
+                      sensitif.
+                    </span>
                   </li>
                 </ul>
               </div>
 
               <div className="pt-4 border-t border-slate-800 text-[11px] text-slate-400">
-                Penyimpanan cloud dengan <strong className="text-purple-400">PostgreSQL</strong>
+                Penyimpanan cloud dengan{" "}
+                <strong className="text-purple-400">PostgreSQL</strong>
               </div>
             </div>
 
@@ -498,20 +582,24 @@ export default function LandingPage() {
                   <Laptop className="w-6 h-6" />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-lg font-bold text-slate-100">3. Web Dashboard Pro</h3>
+                  <h3 className="text-lg font-bold text-slate-100">
+                    3. Web Dashboard Pro
+                  </h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300">
                     Next.js
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  Pusat komando pemilik toko untuk melihat tren performa bisnis dan mengatur seluruh
-                  operasional.
+                  Pusat komando pemilik toko untuk melihat tren performa bisnis
+                  dan mengatur seluruh operasional.
                 </p>
 
                 <ul className="mt-5 space-y-2.5 text-xs text-slate-300">
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Ringkasan KPI omzet harian, bulanan, dan total pendapatan.</span>
+                    <span>
+                      Ringkasan KPI omzet harian, bulanan, dan total pendapatan.
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -519,17 +607,24 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Laporan produk terlaris & analisis margin keuntungan per item.</span>
+                    <span>
+                      Laporan produk terlaris & analisis margin keuntungan per
+                      item.
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Distribusi metode bayar (Tunai, QRIS, Transfer, Debit/Kredit).</span>
+                    <span>
+                      Distribusi metode bayar (Tunai, QRIS, Transfer,
+                      Debit/Kredit).
+                    </span>
                   </li>
                 </ul>
               </div>
 
               <div className="pt-4 border-t border-slate-800 text-[11px] text-slate-400">
-                Akses instan via browser di <strong className="text-emerald-400">PC / Laptop</strong>
+                Akses instan via browser di{" "}
+                <strong className="text-emerald-400">PC / Laptop</strong>
               </div>
             </div>
           </div>
@@ -537,7 +632,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── 4. Fitur-Fitur Lengkap (Berdasarkan Spesifikasi Project) ── */}
-      <section id="fitur" className="py-20 border-t border-slate-800/80 bg-[#090d16]/60">
+      <section
+        id="fitur"
+        className="py-20 border-t border-slate-800/80 bg-[#090d16]/60"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
@@ -547,8 +645,9 @@ export default function LandingPage() {
               Fitur Lengkap Sesuai Kebutuhan Nyata UMKM
             </h2>
             <p className="text-sm text-slate-400">
-              Tidak ada fitur berlebihan yang membingungkan. Semua fitur dirancang fokus untuk
-              kecepatan kasir, akurasi stok, dan kemudahan pemilik toko.
+              Tidak ada fitur berlebihan yang membingungkan. Semua fitur
+              dirancang fokus untuk kecepatan kasir, akurasi stok, dan kemudahan
+              pemilik toko.
             </p>
           </div>
 
@@ -558,10 +657,13 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
                 <Barcode className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-slate-100">Katalog Varian & Barcode CODE 128</h4>
+              <h4 className="text-sm font-bold text-slate-100">
+                Katalog Varian & Barcode CODE 128
+              </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Kelola produk dengan varian (ukuran, warna, panas/dingin) dengan SKU, barcode, modal,
-                dan stok per varian. Barcode dapat dipindai langsung dari kamera kasir.
+                Kelola produk dengan varian (ukuran, warna, panas/dingin) dengan
+                SKU, barcode, modal, dan stok per varian. Barcode dapat dipindai
+                langsung dari kamera kasir.
               </p>
             </div>
 
@@ -570,10 +672,13 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                 <TrendingUp className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-slate-100">HPP Rata-Rata Tertimbang (MAC)</h4>
+              <h4 className="text-sm font-bold text-slate-100">
+                HPP Rata-Rata Tertimbang (MAC)
+              </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Saat ada stok masuk dengan harga kulakan berbeda, sistem menghitung rata-rata harga
-                modal secara otomatis sehingga laba kotor selalu akurat.
+                Saat ada stok masuk dengan harga kulakan berbeda, sistem
+                menghitung rata-rata harga modal secara otomatis sehingga laba
+                kotor selalu akurat.
               </p>
             </div>
 
@@ -582,10 +687,13 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
                 <Boxes className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-slate-100">Pencatatan Mutasi Stok</h4>
+              <h4 className="text-sm font-bold text-slate-100">
+                Pencatatan Mutasi Stok
+              </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Tidak ada perubahan stok sembarangan. Setiap perubahan tercatat sebagai Stok Masuk,
-                Penjualan, Penyesuaian (rusak, hilang, expired, koreksi opname), atau Pemulihan.
+                Tidak ada perubahan stok sembarangan. Setiap perubahan tercatat
+                sebagai Stok Masuk, Penjualan, Penyesuaian (rusak, hilang,
+                expired, koreksi opname), atau Pemulihan.
               </p>
             </div>
 
@@ -594,10 +702,13 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
                 <DollarSign className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-slate-100">Split Payment & Cash Rounding</h4>
+              <h4 className="text-sm font-bold text-slate-100">
+                Split Payment & Cash Rounding
+              </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Mendukung split bayar (sebagian tunai, sebagian QRIS/transfer) serta pembulatan uang
-                tunai ke nominal pecahan rupiah terdekat yang dapat diatur di pengaturan toko.
+                Mendukung split bayar (sebagian tunai, sebagian QRIS/transfer)
+                serta pembulatan uang tunai ke nominal pecahan rupiah terdekat
+                yang dapat diatur di pengaturan toko.
               </p>
             </div>
 
@@ -606,10 +717,13 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
                 <Utensils className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-slate-100">Dukungan Bisnis F&B / Resto</h4>
+              <h4 className="text-sm font-bold text-slate-100">
+                Dukungan Bisnis F&B / Resto
+              </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Pilihan tipe pesanan Dine In & Takeaway, input nomor antrean manual oleh kasir, dan
-                pencetakan tiket pesanan dapur (Kitchen Order Ticket) ke printer dapur terpisah.
+                Pilihan tipe pesanan Dine In & Takeaway, input nomor antrean
+                manual oleh kasir, dan pencetakan tiket pesanan dapur (Kitchen
+                Order Ticket) ke printer dapur terpisah.
               </p>
             </div>
 
@@ -618,10 +732,13 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
                 <BadgePercent className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-bold text-slate-100">Mesin Diskon & Promosi Berjangka</h4>
+              <h4 className="text-sm font-bold text-slate-100">
+                Mesin Diskon & Promosi Berjangka
+              </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Mulai dari diskon persen/nominal bebas (versi Free) hingga pengaturan voucher kode
-                promo, syarat minimal belanja, dan periode berlaku promosi terpusat (versi Paid/Pro).
+                Mulai dari diskon persen/nominal bebas (versi Free) hingga
+                pengaturan voucher kode promo, syarat minimal belanja, dan
+                periode berlaku promosi terpusat (versi Paid/Pro).
               </p>
             </div>
           </div>
@@ -639,8 +756,8 @@ export default function LandingPage() {
               Pilih Paket Sesuai Skala Bisnis Anda
             </h2>
             <p className="text-sm text-slate-400">
-              Tidak ada biaya tersembunyi. Mulai dari paket Free lokal selamanya hingga paket Pro
-              dengan Web Dashboard analitik lengkap.
+              Tidak ada biaya tersembunyi. Mulai dari paket Free lokal selamanya
+              hingga paket Pro dengan Web Dashboard analitik lengkap.
             </p>
           </div>
 
@@ -657,8 +774,12 @@ export default function LandingPage() {
                 </p>
 
                 <div className="mt-6 mb-6">
-                  <span className="text-3xl font-extrabold text-slate-100 font-mono">Rp 0</span>
-                  <span className="text-xs text-slate-400 ml-1">/ selamanya</span>
+                  <span className="text-3xl font-extrabold text-slate-100 font-mono">
+                    Rp 0
+                  </span>
+                  <span className="text-xs text-slate-400 ml-1">
+                    / selamanya
+                  </span>
                 </div>
 
                 <ul className="space-y-3 text-xs text-slate-300">
@@ -711,11 +832,14 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-100">Paket PAID</h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Untuk toko berkembang dengan multi-kasir dan sinkronisasi cloud.
+                  Untuk toko berkembang dengan multi-kasir dan sinkronisasi
+                  cloud.
                 </p>
 
                 <div className="mt-6 mb-6">
-                  <span className="text-3xl font-extrabold text-slate-100 font-mono">Rp 49.000</span>
+                  <span className="text-3xl font-extrabold text-slate-100 font-mono">
+                    Rp 49.000
+                  </span>
                   <span className="text-xs text-slate-400 ml-1">/ bulan</span>
                 </div>
 
@@ -772,11 +896,14 @@ export default function LandingPage() {
                   <Sparkles className="w-4 h-4 text-amber-400" />
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Solusi manajemen lengkap dengan Web Dashboard & analitik finansial.
+                  Solusi manajemen lengkap dengan Web Dashboard & analitik
+                  finansial.
                 </p>
 
                 <div className="mt-6 mb-6">
-                  <span className="text-3xl font-extrabold text-slate-100 font-mono">Rp 99.000</span>
+                  <span className="text-3xl font-extrabold text-slate-100 font-mono">
+                    Rp 99.000
+                  </span>
                   <span className="text-xs text-slate-400 ml-1">/ bulan</span>
                 </div>
 
@@ -822,7 +949,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 6. Bottom Call to Action ── */}
-      <section className="py-20 border-t border-slate-800/80 bg-gradient-to-b from-[#0b0f19] to-[#070a12] relative overflow-hidden">
+      <section className="py-20 border-t border-slate-800/80 bg-linear-to-b from-[#0b0f19] to-[#070a12] relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 relative z-10">
           <div className="inline-flex p-3 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 mb-2">
             <Store className="w-8 h-8" />
@@ -831,8 +958,8 @@ export default function LandingPage() {
             Siap Membawa Usaha Anda ke Level Berikutnya?
           </h2>
           <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Daftarkan toko Anda dalam 2 menit. Dapatkan kasir handal offline di genggaman dan
-            pantauan bisnis menyeluruh di layar komputer Anda.
+            Daftarkan toko Anda dalam 2 menit. Dapatkan kasir handal offline di
+            genggaman dan pantauan bisnis menyeluruh di layar komputer Anda.
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -862,8 +989,12 @@ export default function LandingPage() {
               <Store className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-slate-200">General POS Hybrid</span>
-              <p className="text-[10px] text-slate-500">Sistem Kasir & Web Dashboard UMKM Indonesia</p>
+              <span className="font-bold text-slate-200">
+                General POS Hybrid
+              </span>
+              <p className="text-[10px] text-slate-500">
+                Sistem Kasir & Web Dashboard UMKM Indonesia
+              </p>
             </div>
           </div>
 
@@ -880,10 +1011,16 @@ export default function LandingPage() {
             <a href="#paket" className="hover:text-slate-200 transition">
               Paket Langganan
             </a>
-            <Link href="/login" className="hover:text-indigo-400 transition font-medium">
+            <Link
+              href="/login"
+              className="hover:text-indigo-400 transition font-medium"
+            >
               Login Dashboard
             </Link>
-            <Link href="/register" className="hover:text-indigo-400 transition font-medium">
+            <Link
+              href="/register"
+              className="hover:text-indigo-400 transition font-medium"
+            >
               Register Toko
             </Link>
           </div>
