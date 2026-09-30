@@ -16,9 +16,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return;
     }
 
-    // Route Guard for FREE tier: Only /overview, /subscription, and /settings are directly accessible
+    // Route Guard for FREE tier: Only /overview, /subscription, /settings, and /users are directly accessible
     if (!isLoading && user && isFree) {
-      const allowedFreeRoutes = ['/overview', '/subscription', '/settings'];
+      const allowedFreeRoutes = ['/overview', '/subscription', '/settings', '/users'];
       if (!allowedFreeRoutes.includes(pathname)) {
         router.replace('/overview');
       }

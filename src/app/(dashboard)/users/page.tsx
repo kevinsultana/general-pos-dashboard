@@ -16,10 +16,14 @@ import {
 } from 'lucide-react';
 import { Topbar } from '../../../components/Topbar';
 import { Modal } from '../../../components/Modal';
+import { UpgradeModal } from '../../../components/UpgradeModal';
+import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../lib/api';
 import { User, Role, Permission } from '../../../types';
 
 export default function UsersPage() {
+  const { isFree } = useAuth();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -179,22 +183,71 @@ export default function UsersPage() {
 
           {activeTab === 'users' ? (
             <button
-              onClick={() => setIsOpenAddUser(true)}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs text-white rounded-xl font-semibold shadow-md shadow-indigo-600/20 transition"
+              onClick={() => {
+                if (isFree) {
+                  setShowUpgradeModal(true);
+                } else {
+                  setIsOpenAddUser(true);
+                }
+              }}
+              className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs text-white rounded-xl font-semibold shadow-md shadow-indigo-600/20 transition cursor-pointer"
             >
-              <UserPlus className="w-4 h-4" />
+              {isFree ? <Lock className="w-3.5 h-3.5 text-amber-300" /> : <UserPlus className="w-4 h-4" />}
               <span>Tambah Karyawan</span>
+              {isFree && (
+                <span className="ml-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  PRO
+                </span>
+              )}
             </button>
           ) : (
             <button
-              onClick={() => setIsOpenAddRole(true)}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs text-white rounded-xl font-semibold shadow-md shadow-indigo-600/20 transition"
+              onClick={() => {
+                if (isFree) {
+                  setShowUpgradeModal(true);
+                } else {
+                  setIsOpenAddRole(true);
+                }
+              }}
+              className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs text-white rounded-xl font-semibold shadow-md shadow-indigo-600/20 transition cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              {isFree ? <Lock className="w-3.5 h-3.5 text-amber-300" /> : <Plus className="w-4 h-4" />}
               <span>Tambah Peran Kustom</span>
+              {isFree && (
+                <span className="ml-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  PRO
+                </span>
+              )}
             </button>
           )}
         </div>
+
+        {/* Freemium Banner */}
+        {isFree && (
+          <div className="p-4 rounded-xl bg-linear-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>FREE TIER: 1 PENGGUNA (OWNER)</span>
+                </span>
+                <span className="text-xs font-bold text-slate-200">
+                  Multi-Kasir & Manajemen Shift Memerlukan Lisensi PRO
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Paket Free dirancang untuk operasional kasir mandiri (1 akun Owner). Upgrade ke paket PRO untuk menambah kasir staf tanpa batas, memisahkan shift kerja, dan mengatur izin kustom.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="pos-btn-primary px-3.5 py-1.5 text-xs flex items-center gap-1.5 bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 border-0 shadow-md shadow-amber-500/20 shrink-0 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Upgrade ke PRO</span>
+            </button>
+          </div>
+        )}
 
         {/* TAB 1: USERS LIST */}
         {activeTab === 'users' && (
@@ -531,6 +584,12 @@ export default function UsersPage() {
           </div>
         </form>
       </Modal>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Multi-Kasir & Manajemen Staf"
+      />
     </div>
   );
 }

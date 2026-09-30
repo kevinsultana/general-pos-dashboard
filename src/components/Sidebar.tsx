@@ -56,7 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Laporan Finansial', href: '/reports', icon: BarChart3, badge: 'PRO', requirePro: true },
       { label: 'Pengaturan Toko', href: '/settings', icon: Settings },
-      { label: 'Staf & Hak Akses', href: '/users', icon: Users, requirePro: true },
+      { label: 'Staf & Hak Akses', href: '/users', icon: Users },
       { label: 'Audit Trail', href: '/audit', icon: ShieldAlert, requirePro: true },
       { label: 'Paket Langganan', href: '/subscription', icon: Crown },
     ],
