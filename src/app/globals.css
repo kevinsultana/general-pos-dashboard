@@ -191,3 +191,26 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.8s infinite;
 }
+
+/* Thermal Receipt Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-print-area,
+  #receipt-print-area * {
+    visibility: visible;
+  }
+  #receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 2mm;
+    box-shadow: none;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
+  ShoppingCart,
   Package,
   Boxes,
   ReceiptText,
@@ -38,6 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     groupTitle: 'OPERASIONAL',
     items: [
+      { label: 'Kasir (Web POS)', href: '/pos', icon: ShoppingCart, requirePro: true },
       { label: 'Ringkasan KPI', href: '/overview', icon: LayoutDashboard },
       { label: 'Transaksi Kasir', href: '/transactions', icon: ReceiptText, requirePro: true },
       { label: 'Stok & Inventori', href: '/inventory', icon: Boxes, requirePro: true },

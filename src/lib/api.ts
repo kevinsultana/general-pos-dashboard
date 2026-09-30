@@ -216,6 +216,36 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  createTransaction: (payload: {
+    customerId?: string | null;
+    items: Array<{
+      productId: string;
+      variantId?: string | null;
+      quantity: number;
+      unitPrice: number;
+      discountType?: 'PERCENTAGE' | 'FIXED_AMOUNT' | null;
+      discountValue?: number | null;
+      discountAmount?: number;
+      subtotal: number;
+      total: number;
+    }>;
+    payments: Array<{
+      paymentMethodId: string;
+      amount: number;
+      roundingAmount?: number;
+      metadata?: any;
+    }>;
+    subtotal: number;
+    discountType?: 'PERCENTAGE' | 'FIXED_AMOUNT' | null;
+    discountValue?: number | null;
+    discountTotal?: number;
+    roundingAmount?: number;
+    total: number;
+  }) =>
+    apiRequest('/transactions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   // Promotions
   getPromotions: () => apiRequest('/promotions'),
