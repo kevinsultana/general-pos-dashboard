@@ -2,9 +2,55 @@
 
 import { useLanguage } from '../../contexts/LanguageContext';
 
-export default function LanguageSwitcher({ className = '' }) {
+export default function LanguageSwitcher({ className = '', compact = false }) {
   const { language, setLanguage } = useLanguage();
 
+  // Compact mode: flag-only buttons for mobile
+  if (compact) {
+    return (
+      <div
+        className={`relative inline-flex items-center gap-0.5 bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] ring-1 ring-inset ring-white/50 rounded-full p-0.5 select-none ${className}`}
+        role="group"
+        aria-label="Pilih Bahasa / Select Language"
+      >
+        {/* Button: ID */}
+        <button
+          type="button"
+          onClick={() => setLanguage('id')}
+          className={`relative flex items-center justify-center w-7 h-7 rounded-full text-base transition-all ${
+            language === 'id'
+              ? 'bg-white/95 shadow-xs'
+              : 'hover:bg-white/50'
+          }`}
+          title="Bahasa Indonesia"
+        >
+          <span className="leading-none">🇮🇩</span>
+          {language === 'id' && (
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-1 ring-white animate-pulse" />
+          )}
+        </button>
+
+        {/* Button: EN */}
+        <button
+          type="button"
+          onClick={() => setLanguage('en')}
+          className={`relative flex items-center justify-center w-7 h-7 rounded-full text-base transition-all ${
+            language === 'en'
+              ? 'bg-white/95 shadow-xs'
+              : 'hover:bg-white/50'
+          }`}
+          title="English"
+        >
+          <span className="leading-none">🇬🇧</span>
+          {language === 'en' && (
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 ring-1 ring-white animate-pulse" />
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  // Full mode: sliding pill with text labels
   return (
     <div
       className={`relative inline-flex items-center bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] ring-1 ring-inset ring-white/50 rounded-full p-1 select-none transition-all ${className}`}

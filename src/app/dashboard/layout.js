@@ -84,7 +84,7 @@ export default function DashboardLayout({ children }) {
       </div>
 
       {/* 1. Bar Sisi Tetap untuk Paparan Desktop (Fixed/Sticky Sidebar) */}
-      <div className="hidden lg:flex flex-col w-72 shrink-0 p-4 h-screen sticky top-0">
+      <div className="hidden lg:flex flex-col w-72 shrink-0 p-4 h-screen sticky top-0 overflow-hidden">
         <div className="w-full h-full rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/60 overflow-hidden">
           <Sidebar />
         </div>
