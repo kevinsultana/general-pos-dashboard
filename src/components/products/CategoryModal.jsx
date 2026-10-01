@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Tag, Palette, Loader2, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
@@ -17,6 +17,23 @@ export default function CategoryModal({ isOpen, onClose, category, onSuccess }) 
   const [loading, setLoading] = useState(false);
 
   const isEdit = Boolean(category?.id);
+
+  // [M-2] isMountedRef — cegah state update setelah unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // [M-6] Tutup modal dengan tombol Escape
+  const handleEscape = useCallback((e) => {
+    if (e.key === 'Escape' && !loading) onClose();
+  }, [onClose, loading]);
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, handleEscape]);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,17 +52,17 @@ export default function CategoryModal({ isOpen, onClose, category, onSuccess }) 
     try {
       if (isEdit) {
         await api.put(`/categories/${category.id}`, { name: name.trim(), color });
-        toast.success('Kategori berhasil diperbarui!');
+        if (isMountedRef.current) toast.success('Kategori berhasil diperbarui!');
       } else {
         await api.post('/categories', { name: name.trim(), color });
-        toast.success('Kategori baru berhasil ditambahkan!');
+        if (isMountedRef.current) toast.success('Kategori baru berhasil ditambahkan!');
       }
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal menyimpan kategori.');
+      if (isMountedRef.current) toast.error(err.response?.data?.message || 'Gagal menyimpan kategori.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 

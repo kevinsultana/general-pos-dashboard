@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Boxes, Loader2, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
@@ -9,6 +9,23 @@ export default function QuickStockModal({ isOpen, onClose, product, branchId, on
   const [quantity, setQuantity] = useState('');
   const [minStock, setMinStock] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // [M-2] isMountedRef — cegah state update setelah unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // [M-6] Tutup modal dengan tombol Escape
+  const handleEscape = useCallback((e) => {
+    if (e.key === 'Escape' && !loading) onClose();
+  }, [onClose, loading]);
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, handleEscape]);
 
   const currentStock = product?.stocks?.find((s) => s.branchId === branchId)?.quantity ?? 0;
   const currentMinStock = product?.stocks?.find((s) => s.branchId === branchId)?.minStock ?? 5;
@@ -34,13 +51,13 @@ export default function QuickStockModal({ isOpen, onClose, product, branchId, on
         minStock: parseInt(minStock, 10) || 5,
         branchId,
       });
-      toast.success(`Stok "${product.name}" berhasil disesuaikan ke ${newQty}!`);
+      if (isMountedRef.current) toast.success(`Stok "${product.name}" berhasil disesuaikan ke ${newQty}!`);
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal memperbarui stok.');
+      if (isMountedRef.current) toast.error(err.response?.data?.message || 'Gagal memperbarui stok.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 

@@ -1,32 +1,83 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../lib/api';
+
+// [H-3] safeStorage helper: semua akses localStorage dibungkus try/catch
+// Mencegah crash di SSR (server-side rendering) dan browser mode private/blocked
+const safeStorage = {
+  get: (key) => {
+    try {
+      if (typeof window === 'undefined') return null;
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set: (key, value) => {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.setItem(key, value);
+    } catch {
+      // Storage mungkin penuh atau diblokir (private mode)
+    }
+  },
+  remove: (key) => {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.removeItem(key);
+    } catch {
+      // Ignore
+    }
+  },
+  getJSON: (key) => {
+    try {
+      if (typeof window === 'undefined') return null;
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  },
+};
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [tenant, setTenant] = useState(null);
-  const [token, setToken] = useState(null);
+  // [M-4] Sync-init user & tenant dari localStorage agar tidak ada flicker
+  // Pada SSR, typeof window === 'undefined' — safeStorage.getJSON() mengembalikan null dengan aman
+  const [user, setUser] = useState(() => safeStorage.getJSON('omnipos_user'));
+  const [tenant, setTenant] = useState(() => safeStorage.getJSON('omnipos_tenant'));
+  const [token, setToken] = useState(() => safeStorage.get('omnipos_token'));
   const [activeBranchId, setActiveBranchId] = useState(null);
   const [activeBranch, setActiveBranch] = useState(null);
   const [branches, setBranches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // [M-2] isMountedRef pattern — mencegah state update setelah komponen unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Verifikasi sesi login aktif saat pertama kali aplikasi dimuat
   const checkAuth = useCallback(async () => {
     try {
-      const storedToken = localStorage.getItem('omnipos_token');
+      const storedToken = safeStorage.get('omnipos_token');
       if (!storedToken) {
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
         return;
       }
 
-      setToken(storedToken);
+      if (isMountedRef.current) setToken(storedToken);
 
       // Panggil endpoint /auth/me untuk memvalidasi token dan mendapatkan state terbaru
       const response = await api.get('/auth/me');
+      if (!isMountedRef.current) return;
+
       if (response && response.success && response.data) {
         setUser(response.data.user);
         setTenant(response.data.tenant);
@@ -41,24 +92,26 @@ export function AuthProvider({ children }) {
           null;
         setActiveBranch(currentActive);
 
-        localStorage.setItem('omnipos_user', JSON.stringify(response.data.user));
-        localStorage.setItem('omnipos_tenant', JSON.stringify(response.data.tenant));
+        safeStorage.set('omnipos_user', JSON.stringify(response.data.user));
+        safeStorage.set('omnipos_tenant', JSON.stringify(response.data.tenant));
       } else {
         throw new Error('Sesi tidak valid');
       }
     } catch (err) {
       // Jika token expired atau invalid, bersihkan storage
-      localStorage.removeItem('omnipos_token');
-      localStorage.removeItem('omnipos_user');
-      localStorage.removeItem('omnipos_tenant');
-      setUser(null);
-      setTenant(null);
-      setToken(null);
-      setActiveBranchId(null);
-      setActiveBranch(null);
-      setBranches([]);
+      safeStorage.remove('omnipos_token');
+      safeStorage.remove('omnipos_user');
+      safeStorage.remove('omnipos_tenant');
+      if (isMountedRef.current) {
+        setUser(null);
+        setTenant(null);
+        setToken(null);
+        setActiveBranchId(null);
+        setActiveBranch(null);
+        setBranches([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
     }
   }, []);
 
@@ -122,9 +175,9 @@ export function AuthProvider({ children }) {
       setUser(receivedUser);
       setTenant(receivedTenant);
 
-      localStorage.setItem('omnipos_token', receivedToken);
-      localStorage.setItem('omnipos_user', JSON.stringify(receivedUser));
-      localStorage.setItem('omnipos_tenant', JSON.stringify(receivedTenant));
+      safeStorage.set('omnipos_token', receivedToken);
+      safeStorage.set('omnipos_user', JSON.stringify(receivedUser));
+      safeStorage.set('omnipos_tenant', JSON.stringify(receivedTenant));
       return response;
     }
 
@@ -144,9 +197,9 @@ export function AuthProvider({ children }) {
       setUser(receivedUser);
       setTenant(receivedTenant);
 
-      localStorage.setItem('omnipos_token', receivedToken);
-      localStorage.setItem('omnipos_user', JSON.stringify(receivedUser));
-      localStorage.setItem('omnipos_tenant', JSON.stringify(receivedTenant));
+      safeStorage.set('omnipos_token', receivedToken);
+      safeStorage.set('omnipos_user', JSON.stringify(receivedUser));
+      safeStorage.set('omnipos_tenant', JSON.stringify(receivedTenant));
       return response;
     }
 
@@ -165,7 +218,7 @@ export function AuthProvider({ children }) {
         setToken(newToken);
         setActiveBranchId(newActiveBranch.id);
         setActiveBranch(newActiveBranch);
-        localStorage.setItem('omnipos_token', newToken);
+        safeStorage.set('omnipos_token', newToken);
         await checkAuth();
         return response;
       }
@@ -179,9 +232,9 @@ export function AuthProvider({ children }) {
    * Fungsi Logout
    */
   const logout = () => {
-    localStorage.removeItem('omnipos_token');
-    localStorage.removeItem('omnipos_user');
-    localStorage.removeItem('omnipos_tenant');
+    safeStorage.remove('omnipos_token');
+    safeStorage.remove('omnipos_user');
+    safeStorage.remove('omnipos_tenant');
     setUser(null);
     setTenant(null);
     setToken(null);

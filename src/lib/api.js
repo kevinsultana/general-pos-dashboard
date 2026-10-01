@@ -10,15 +10,20 @@ const BASE_URL =
  * Mendapatkan token dari localStorage secara aman di client-side
  */
 const getToken = () => {
-  if (typeof window !== 'undefined') {
+  try {
+    if (typeof window === 'undefined') return null;
     return localStorage.getItem('omnipos_token');
+  } catch {
+    return null;
   }
-  return null;
 };
 
 /**
  * Core HTTP Request Wrapper dengan penanganan Bearer Token, Query Params,
- * Axios-like error/response compatibility, dan Interceptor 401 / 403.
+ * AbortController signal passthrough, dan Interceptor 401 / 403.
+ *
+ * [H-7] signal dari options diteruskan langsung ke fetch — mendukung AbortController
+ * [L-2] Dihapus Object.defineProperty normalization yang fragile dan bisa break di beberapa env
  */
 async function request(endpoint, options = {}) {
   // Serialisasi options.params jika ada (seperti pada axios)
@@ -49,16 +54,21 @@ async function request(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // [H-7] Bersihkan options.params sebelum dikirim ke fetch; signal DIPERTAHANKAN
+  const { params: _params, ...restOptions } = options;
   const config = {
-    ...options,
+    ...restOptions,
     headers,
   };
-  delete config.params;
 
   let response;
   try {
     response = await fetch(url, config);
   } catch (networkError) {
+    // Jika error karena AbortController.abort(), biarkan error menyebar apa adanya
+    if (networkError.name === 'AbortError') {
+      throw networkError;
+    }
     const error = new Error('Gagal terhubung ke server API. Pastikan server backend sedang berjalan.');
     error.status = 0;
     error.networkError = true;
@@ -105,9 +115,13 @@ async function request(endpoint, options = {}) {
 
     // Interceptor Global untuk Respon 401 Unauthorized / Token Expired
     if (response.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('omnipos_token');
-      localStorage.removeItem('omnipos_user');
-      localStorage.removeItem('omnipos_tenant');
+      try {
+        localStorage.removeItem('omnipos_token');
+        localStorage.removeItem('omnipos_user');
+        localStorage.removeItem('omnipos_tenant');
+      } catch {
+        // Ignore storage errors
+      }
 
       const currentPath = window.location.pathname;
       if (!currentPath.startsWith('/login') && !currentPath.startsWith('/register')) {
@@ -139,40 +153,10 @@ async function request(endpoint, options = {}) {
     throw error;
   }
 
-  // Normalisasi dual compatibility:
-  // Mendukung direct JSON (res.success, res.data) sekaligus Axios-like format (res.data.success, res.data.data)
-  if (data && typeof data === 'object') {
-    if (!('status' in data)) {
-      data.status = response.status;
-    }
-
-    // Jika objek response memiliki child property `data`
-    if (data.data !== undefined && data.data !== null && typeof data.data === 'object') {
-      if (!('success' in data.data)) {
-        Object.defineProperty(data.data, 'success', {
-          value: data.success,
-          enumerable: false,
-          configurable: true,
-          writable: true,
-        });
-      }
-      if (!('data' in data.data)) {
-        Object.defineProperty(data.data, 'data', {
-          value: data.data,
-          enumerable: false,
-          configurable: true,
-          writable: true,
-        });
-      }
-      if (data.meta && !('meta' in data.data)) {
-        Object.defineProperty(data.data, 'meta', {
-          value: data.meta,
-          enumerable: false,
-          configurable: true,
-          writable: true,
-        });
-      }
-    }
+  // [L-2] Response normalisasi: tambah .status HTTP ke data, tanpa Object.defineProperty yang fragile.
+  // Semua komponen menggunakan res.success & res.data langsung (sudah konsisten).
+  if (data && typeof data === 'object' && !('status' in data)) {
+    data.status = response.status;
   }
 
   return data;

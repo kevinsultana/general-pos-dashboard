@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, Sliders, Plus, Trash2, Loader2, ToggleLeft, ToggleRight,
   Package, ChevronDown,
@@ -25,6 +25,23 @@ export default function ModifierModal({ isOpen, onClose, modifier, products, onS
   const [loading, setLoading] = useState(false);
 
   const isEdit = Boolean(modifier?.id);
+
+  // [M-2] isMountedRef — cegah state update setelah unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // [M-6] Tutup modal dengan tombol Escape
+  const handleEscape = useCallback((e) => {
+    if (e.key === 'Escape' && !loading) onClose();
+  }, [onClose, loading]);
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, handleEscape]);
 
   useEffect(() => {
     if (isOpen) {
@@ -96,17 +113,17 @@ export default function ModifierModal({ isOpen, onClose, modifier, products, onS
     try {
       if (isEdit) {
         await api.put(`/modifiers/${modifier.id}`, payload);
-        toast.success('Modifier group berhasil diperbarui!');
+        if (isMountedRef.current) toast.success('Modifier group berhasil diperbarui!');
       } else {
         await api.post('/modifiers', payload);
-        toast.success('Modifier group berhasil ditambahkan!');
+        if (isMountedRef.current) toast.success('Modifier group berhasil ditambahkan!');
       }
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal menyimpan modifier.');
+      if (isMountedRef.current) toast.error(err.response?.data?.message || 'Gagal menyimpan modifier.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 

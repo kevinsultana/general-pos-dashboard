@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, Package, Loader2, Plus, Trash2, ToggleLeft, ToggleRight,
   Info, Tag, DollarSign, Boxes, Sliders, ChevronDown,
@@ -23,6 +23,23 @@ export default function ProductModal({ isOpen, onClose, product, categories, mod
   const isEdit = Boolean(product?.id);
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(false);
+
+  // [M-2] isMountedRef — cegah state update setelah unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // [M-6] Tutup modal dengan tombol Escape
+  const handleEscape = useCallback((e) => {
+    if (e.key === 'Escape' && !loading) onClose();
+  }, [onClose, loading]);
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, handleEscape]);
 
   // Tab 1 – Info Dasar
   const [name, setName]               = useState('');
@@ -141,17 +158,17 @@ export default function ProductModal({ isOpen, onClose, product, categories, mod
     try {
       if (isEdit) {
         await api.put(`/products/${product.id}`, payload);
-        toast.success('Produk berhasil diperbarui!');
+        if (isMountedRef.current) toast.success('Produk berhasil diperbarui!');
       } else {
         await api.post('/products', payload);
-        toast.success('Produk baru berhasil ditambahkan!');
+        if (isMountedRef.current) toast.success('Produk baru berhasil ditambahkan!');
       }
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal menyimpan produk.');
+      if (isMountedRef.current) toast.error(err.response?.data?.message || 'Gagal menyimpan produk.');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 
@@ -439,18 +456,19 @@ export default function ProductModal({ isOpen, onClose, product, categories, mod
 
           {/* Footer Actions */}
           <div className="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white transition-colors">
+            <button type="button" onClick={onClose} disabled={loading} className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white transition-colors disabled:opacity-50">
               Batal
             </button>
             <div className="flex items-center gap-2">
               {activeTab !== 'info' && (
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => {
                     const idx = TABS.findIndex((t) => t.id === activeTab);
                     if (idx > 0) setActiveTab(TABS[idx - 1].id);
                   }}
-                  className="py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white transition-colors"
+                  className="py-2.5 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-white transition-colors disabled:opacity-50"
                 >
                   ← Kembali
                 </button>
@@ -458,11 +476,12 @@ export default function ProductModal({ isOpen, onClose, product, categories, mod
               {activeTab !== 'modifiers' ? (
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => {
                     const idx = TABS.findIndex((t) => t.id === activeTab);
                     if (idx < TABS.length - 1) setActiveTab(TABS[idx + 1].id);
                   }}
-                  className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold transition-colors"
+                  className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold transition-colors disabled:opacity-50"
                 >
                   Lanjut →
                 </button>
