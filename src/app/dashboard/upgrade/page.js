@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Script from "next/script";
+import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Check,
@@ -9,6 +10,8 @@ import {
   ArrowRight,
   Store,
   Crown,
+  Info,
+  ExternalLink,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -17,6 +20,7 @@ import api from "../../../lib/api";
 import { showAlertNotice } from "../../../lib/alerts";
 
 export default function UpgradePage() {
+  const router = useRouter();
   const { tenant, checkAuth } = useAuth();
   const { t } = useLanguage();
 
@@ -31,11 +35,23 @@ export default function UpgradePage() {
       return;
     }
 
+    // 1. Validasi kesiapan SDK Midtrans Snap
+    if (
+      typeof window === "undefined" ||
+      !window.snap ||
+      typeof window.snap.pay !== "function"
+    ) {
+      toast.error(
+        "Sistem pembayaran Midtrans sedang dimuat, silakan coba beberapa detik lagi."
+      );
+      return;
+    }
+
     setLoadingPlan(targetPlan);
-    const toastId = toast.loading(t("upgrade.loadingSnap"));
+    const toastId = toast.loading(t("upgrade.loadingSnap") || "Menyiapkan transaksi pembayaran...");
 
     try {
-      // 1. Panggil backend Express untuk membuat transaksi Midtrans Snap
+      // 2. Panggil backend Express untuk membuat transaksi Midtrans Snap resmi
       const response = await api.post("/subscriptions/create-transaction", {
         plan: targetPlan,
         billingCycle,
@@ -43,119 +59,114 @@ export default function UpgradePage() {
 
       toast.dismiss(toastId);
 
-      const token = response?.token || response?.data?.snapToken || response?.data?.token;
-      const orderId = response?.orderId || response?.data?.orderId;
+      const snapToken =
+        response?.data?.snapToken ||
+        response?.data?.token ||
+        response?.snapToken ||
+        response?.token;
+      const orderId = response?.data?.orderId || response?.orderId;
 
-      if (!response || !response.success || !token) {
+      if (!response || !response.success || !snapToken) {
         throw new Error(
           response?.message ||
-            "Gagal membuat transaksi gerbang pembayaran Midtrans.",
+            "Gagal membuat transaksi gerbang pembayaran Midtrans."
         );
       }
 
-      const snapToken = token;
-      const isMock = response.isMock || (typeof snapToken === 'string' && snapToken.startsWith('SIM-'));
+      // 3. Buka Popup Pembayaran Midtrans Snap Sandbox Resmi
+      window.snap.pay(snapToken, {
+        onSuccess: async (result) => {
+          const verifyToastId = toast.loading(
+            "Memverifikasi status pembayaran..."
+          );
+          try {
+            // Panggil endpoint verify-payment di backend
+            await api.post("/subscriptions/verify-payment", {
+              plan: targetPlan,
+              orderId: result.order_id || orderId,
+            });
 
-      // 2. Jalankan Midtrans Snap Popup jika script tersedia dan bukan mode token simulasi
-      if (
-        !isMock &&
-        typeof window !== "undefined" &&
-        window.snap &&
-        typeof window.snap.pay === "function"
-      ) {
-        window.snap.pay(snapToken, {
-          onSuccess: async (result) => {
-            try {
-              // Kirim konfirmasi pembayaran ke backend untuk memperbarui status tenant
-              await api.post("/subscriptions/verify-payment", {
-                plan: targetPlan,
-                orderId: result.order_id || orderId,
-              });
+            toast.dismiss(verifyToastId);
 
-              // Segarkan data AuthContext agar status tenant di antarmuka langsung berubah
-              await checkAuth();
+            // Segarkan status sesi akun di AuthContext agar role/plan langsung aktif
+            await checkAuth();
 
-              showAlertNotice({
-                title: t("upgrade.paymentSuccessTitle"),
-                text: t("upgrade.paymentSuccessText", { plan: targetPlan }),
-                icon: "success",
-                confirmButtonText: t("common.ok") || "OK",
-              });
-            } catch (err) {
-              console.error("Error verifying payment:", err);
-              await checkAuth();
-            } finally {
-              setLoadingPlan(null);
-            }
-          },
-          onPending: () => {
-            toast(t("upgrade.paymentPendingText"), { icon: "⏳" });
+            await showAlertNotice({
+              title: t("upgrade.paymentSuccessTitle") || "Pembayaran Berhasil!",
+              text:
+                t("upgrade.paymentSuccessText", { plan: targetPlan }) ||
+                `Selamat, paket ${targetPlan} Anda telah aktif.`,
+              icon: "success",
+              confirmButtonText: t("common.ok") || "Menuju Dashboard",
+            });
+
+            router.push("/dashboard");
+          } catch (err) {
+            toast.dismiss(verifyToastId);
+            console.error("Error verifying payment:", err);
+            toast.error(
+              err.message || "Gagal memverifikasi pembayaran. Silakan muat ulang halaman."
+            );
+            await checkAuth();
+          } finally {
             setLoadingPlan(null);
-          },
-          onError: () => {
-            toast.error(t("upgrade.paymentErrorText"));
-            setLoadingPlan(null);
-          },
-          onClose: () => {
-            setLoadingPlan(null);
-          },
-        });
-      } else {
-        // Fallback Simulasi jika akun Midtrans belum aktif atau script Snap sedang offline
-        const reasonText = response.mockReason
-          ? `\n\nInfo: ${response.mockReason}`
-          : '';
-        const confirmSim = await showAlertNotice({
-          title: `Simulasi Pembayaran (${targetPlan})`,
-          text: `Mode Pengujian Aktif.${reasonText}\n\nApakah Anda ingin mengonfirmasi pembayaran simulasi untuk mengaktifkan Paket ${targetPlan} (${billingCycle === "yearly" ? "Tahunan" : "Bulanan"})?`,
-          icon: "question",
-          showCancelButton: true,
-          confirmButtonText: "Ya, Aktifkan Paket (Simulasi)",
-          cancelButtonText: "Batal",
-        });
+          }
+        },
+        onPending: (result) => {
+          const vaNumber =
+            result?.va_numbers?.[0]?.va_number ||
+            result?.bca_va_number ||
+            result?.permata_va_number ||
+            result?.bill_key;
+          const bank = result?.va_numbers?.[0]?.bank?.toUpperCase();
 
-        if (confirmSim.isConfirmed) {
-          await api.post("/subscriptions/verify-payment", {
-            plan: targetPlan,
-            orderId,
-          });
-
-          await checkAuth();
+          let pendingMsg =
+            t("upgrade.paymentPendingText") ||
+            "Pembayaran sedang menunggu transfer.";
+          if (vaNumber) {
+            pendingMsg += ` Nomor ${bank ? `${bank} ` : ""}Virtual Account: ${vaNumber}.`;
+          } else if (result?.payment_type) {
+            pendingMsg += ` Metode: ${result.payment_type}.`;
+          }
 
           showAlertNotice({
-            title: t("upgrade.paymentSuccessTitle"),
-            text: t("upgrade.paymentSuccessText", { plan: targetPlan }),
-            icon: "success",
-            confirmButtonText: t("common.ok") || "OK",
+            title: "Menunggu Pembayaran",
+            text: `${pendingMsg}\nSilakan selesaikan pembayaran Anda di gerbang Midtrans atau simulator sandbox.`,
+            icon: "info",
+            confirmButtonText: "Mengerti",
           });
-        }
-        setLoadingPlan(null);
-      }
+          setLoadingPlan(null);
+        },
+        onError: (error) => {
+          console.error("Midtrans Snap error:", error);
+          toast.error(
+            error?.status_message ||
+              t("upgrade.paymentErrorText") ||
+              "Pembayaran gagal atau dibatalkan oleh Midtrans."
+          );
+          setLoadingPlan(null);
+        },
+        onClose: () => {
+          setLoadingPlan(null);
+        },
+      });
     } catch (err) {
       toast.dismiss(toastId);
       toast.error(
-        err.message || "Terjadi kesalahan saat memproses pembayaran.",
+        err.message || "Terjadi kesalahan saat memproses pembayaran."
       );
       setLoadingPlan(null);
     }
   };
 
-  const midtransClientKey =
-    process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "SB-Mid-client-sample-key";
-  const isProductionSnap =
-    process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true" ||
-    (midtransClientKey.startsWith("Mid-") && !midtransClientKey.startsWith("SB-"));
-  const snapScriptUrl = isProductionSnap
-    ? "https://app.midtrans.com/snap/snap.js"
-    : "https://app.sandbox.midtrans.com/snap/snap.js";
-
   return (
     <>
-      {/* Script Midtrans Snap (Sandbox / Production dinamis) */}
+      {/* Script Midtrans Snap Sandbox Resmi */}
       <Script
-        src={snapScriptUrl}
-        data-client-key={midtransClientKey}
-        strategy="lazyOnload"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="afterInteractive"
+        onLoad={() => console.log("Midtrans Snap SDK Loaded")}
       />
 
       <div className="space-y-8 pb-12 animate-in fade-in duration-300">
@@ -444,6 +455,37 @@ export default function UpgradePage() {
         <div className="max-w-xl mx-auto p-4 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 shadow-xs flex items-center justify-center gap-2.5 text-slate-600 text-xs text-center">
           <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{t("upgrade.securityNotice")}</span>
+        </div>
+
+        {/* 5. Catatan Pengujian Sandbox untuk Tester */}
+        <div className="max-w-2xl mx-auto p-4 sm:p-5 rounded-3xl bg-amber-500/10 border border-amber-400/30 backdrop-blur-xl shadow-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 shadow-2xs">
+              <Info className="w-5 h-5 text-amber-700" />
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-xs font-black text-amber-900 tracking-tight">
+                Mode Pengujian Sandbox Aktif
+              </p>
+              <p className="text-[11px] text-amber-800 leading-relaxed font-normal">
+                Anda dapat menggunakan Simulator Pembayaran Midtrans (Virtual Account / QRIS) di{" "}
+                <span className="font-mono font-bold text-amber-900">
+                  https://simulator.sandbox.midtrans.com
+                </span>{" "}
+                untuk menyelesaikan tes pembayaran.
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="https://simulator.sandbox.midtrans.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white hover:bg-amber-50 text-amber-900 border border-amber-300 font-extrabold text-xs shadow-2xs transition-all active:scale-98 shrink-0 self-start sm:self-auto"
+          >
+            <span>Buka Simulator</span>
+            <ExternalLink className="w-3.5 h-3.5 text-amber-600" />
+          </a>
         </div>
       </div>
     </>
