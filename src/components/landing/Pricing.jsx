@@ -34,9 +34,9 @@ export default function Pricing() {
       name: 'PLUS',
       planId: 'plus',
       tagline: t('pricing.plus_tagline'),
-      priceMonthly: 149000,
-      priceAnnual: 119000,
-      popular: true,
+      priceMonthly: 25000,
+      priceAnnual: 20000,
+      popular: false,
       badge: t('pricing.mostPopular'),
       features: [
         t('pricing.plus_f1'),
@@ -55,9 +55,9 @@ export default function Pricing() {
       name: 'PRO',
       planId: 'pro',
       tagline: t('pricing.pro_tagline'),
-      priceMonthly: 399000,
-      priceAnnual: 319000,
-      popular: false,
+      priceMonthly: 60000,
+      priceAnnual: 50000,
+      popular: true,
       badge: t('pricing.multiBranchBadge'),
       features: [
         t('pricing.pro_f1'),
@@ -70,7 +70,7 @@ export default function Pricing() {
       ],
       ctaText: t('pricing.pro_cta'),
       ctaStyle:
-        'bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-bold shadow-2xs',
+        'bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold shadow-md shadow-amber-500/20',
     },
   ];
 

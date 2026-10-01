@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -10,7 +10,8 @@ import TopNavbar from '../../components/dashboard/TopNavbar';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
-  const { isLoading, isAuthenticated } = useAuth();
+  const pathname = usePathname();
+  const { isLoading, isAuthenticated, tenant } = useAuth();
   const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -20,6 +21,23 @@ export default function DashboardLayout({ children }) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
+
+  // Proteksi Rute Paket FREE:
+  // Akun FREE hanya boleh mengakses Detail Toko (/dashboard/store-profile) dan Upgrade (/dashboard/upgrade).
+  // Jika membuka route operasional (seperti /dashboard/pos, /dashboard/transactions), arahkan ke /dashboard/upgrade.
+  // Jika membuka root /dashboard, arahkan ke /dashboard/store-profile.
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && tenant?.plan === 'FREE') {
+      if (pathname === '/dashboard') {
+        router.replace('/dashboard/store-profile');
+      } else if (
+        pathname !== '/dashboard/store-profile' &&
+        pathname !== '/dashboard/upgrade'
+      ) {
+        router.replace('/dashboard/upgrade');
+      }
+    }
+  }, [isLoading, isAuthenticated, tenant?.plan, pathname, router]);
 
   // Kunci scroll halaman ketika drawer mudah alih terbuka
   useEffect(() => {
