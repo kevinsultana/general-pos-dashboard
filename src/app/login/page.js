@@ -2,30 +2,37 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Layers,
   ArrowLeft,
+  Store,
   Mail,
   Lock,
   Eye,
   EyeOff,
   ArrowRight,
-  Sparkles,
   ShieldAlert,
-  CheckCircle2,
+  Smartphone,
+  Sparkles,
+  X,
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({
+    storeSlug: '',
     email: '',
     password: '',
-    rememberMe: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [planRestrictedModal, setPlanRestrictedModal] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -36,14 +43,19 @@ export default function LoginPage() {
 
   const validate = () => {
     const newErrors = {};
+
+    if (!formData.storeSlug.trim()) {
+      newErrors.storeSlug = 'Slug / ID toko wajib diisi';
+    }
     if (!formData.email.trim()) {
-      newErrors.email = 'Email wajib diisi';
+      newErrors.email = 'Alamat email wajib diisi';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Format email tidak valid';
     }
     if (!formData.password) {
       newErrors.password = 'Password wajib diisi';
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -54,23 +66,27 @@ export default function LoginPage() {
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
     try {
-      // Mock call to Express backend API: POST /api/auth/login
-      /*
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      */
+      await login(
+        formData.storeSlug.trim(),
+        formData.email.trim(),
+        formData.password,
+        'web'
+      );
 
-      // Simulated network latency
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      setLoginSuccess(true);
+      // Redirect ke dashboard saat login sukses
+      router.push('/dashboard');
     } catch (err) {
-      setErrors({ form: 'Email atau password salah. Silakan periksa kembali akun Anda.' });
+      // Periksa apakah ini restriksi paket FREE
+      if (err.status === 403 && (err.code === 'PLAN_RESTRICTED' || err.data?.code === 'PLAN_RESTRICTED')) {
+        setPlanRestrictedModal(true);
+      } else {
+        setErrors({
+          form: err.message || 'Kredensial atau ID toko tidak valid. Silakan coba kembali.',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -116,15 +132,15 @@ export default function LoginPage() {
         </Link>
       </header>
 
-      {/* Main Content Area */}
+      {/* Main Content Area: Centered Glass Login Card */}
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8">
         <div className="relative w-full max-w-md mx-auto">
           {/* Specular Glow behind Card */}
           <div className="absolute -inset-1 rounded-[38px] bg-linear-to-r from-amber-200/50 via-rose-100/40 to-emerald-100/50 blur-2xl opacity-75 pointer-events-none" />
 
-          {/* Main Glass Card */}
-          <div className="relative rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_16px_48px_0_rgba(31,38,135,0.08)] ring-1 ring-inset ring-white/60 p-6 sm:p-10 transition-all duration-300">
-            {/* Card Header */}
+          {/* Main Frosted Glass Card */}
+          <div className="relative max-w-md w-full p-8 rounded-3xl border border-white/80 shadow-xl bg-white/75 backdrop-blur-2xl ring-1 ring-inset ring-white/60 transition-all duration-300">
+            {/* Header */}
             <div className="text-center mb-8">
               <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm shadow-amber-500/25 mx-auto mb-4">
                 <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
@@ -136,157 +152,202 @@ export default function LoginPage() {
                 Selamat Datang Kembali
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed">
-                Masuk ke portal kasir & dashboard analitik tokomu.
+                Masuk ke portal kasir & dashboard analitik toko Anda.
               </p>
             </div>
 
-            {loginSuccess ? (
-              <div className="py-8 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-inner">
-                  <CheckCircle2 className="w-9 h-9" />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Form Global Error Alert */}
+              {errors.form && (
+                <div className="flex items-center gap-2 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span>{errors.form}</span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Login Berhasil!
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  Mengalihkan ke dashboard toko Anda...
-                </p>
-                <div className="pt-2">
-                  <div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Global Error Alert */}
-                {errors.form && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
-                    <ShieldAlert className="w-4 h-4 shrink-0" />
-                    <span>{errors.form}</span>
-                  </div>
-                )}
+              )}
 
-                {/* Email Field */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Alamat Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="email"
-                      placeholder="nama@tokomu.com"
-                      value={formData.email}
-                      onChange={(e) => handleChange('email', e.target.value)}
-                      className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
-                        errors.email
-                          ? 'border-rose-300 focus:ring-rose-200'
-                          : 'border-slate-200/80 focus:ring-amber-200/60 focus:border-amber-400'
-                      }`}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-[11px] text-rose-600 mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                {/* Password Field */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Password
-                    </label>
-                    <a
-                      href="#forgot-password"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        alert('Silakan hubungi administrator toko Anda atau customer support untuk reset kata sandi.');
-                      }}
-                      className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 transition-colors"
-                    >
-                      Lupa password?
-                    </a>
-                  </div>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={(e) => handleChange('password', e.target.value)}
-                      className={`w-full bg-white/80 border rounded-xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
-                        errors.password
-                          ? 'border-rose-300 focus:ring-rose-200'
-                          : 'border-slate-200/80 focus:ring-amber-200/60 focus:border-amber-400'
-                      }`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <p className="text-[11px] text-rose-600 mt-1">{errors.password}</p>
-                  )}
-                </div>
-
-                {/* Remember Me Checkbox */}
-                <div className="flex items-center gap-2">
+              {/* ID / Slug Toko */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  ID / Slug Toko
+                </label>
+                <div className="relative">
+                  <Store className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    type="checkbox"
-                    id="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={(e) => handleChange('rememberMe', e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-400/40 border-slate-300"
+                    type="text"
+                    placeholder="kopi-senja"
+                    value={formData.storeSlug}
+                    onChange={(e) => handleChange('storeSlug', e.target.value)}
+                    className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs font-mono ${
+                      errors.storeSlug
+                        ? 'border-rose-300 focus:ring-rose-200'
+                        : 'border-slate-200/80 focus:ring-amber-200/60 focus:border-amber-400'
+                    }`}
                   />
-                  <label htmlFor="rememberMe" className="text-xs text-slate-600 select-none cursor-pointer">
-                    Ingat sesi saya di perangkat ini
+                </div>
+                {errors.storeSlug && (
+                  <p className="text-[11px] text-rose-600 mt-1">{errors.storeSlug}</p>
+                )}
+              </div>
+
+              {/* Email Pengguna */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Alamat Email Pengguna
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    placeholder="kasir@tokomu.com"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
+                      errors.email
+                        ? 'border-rose-300 focus:ring-rose-200'
+                        : 'border-slate-200/80 focus:ring-amber-200/60 focus:border-amber-400'
+                    }`}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-[11px] text-rose-600 mt-1">{errors.email}</p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    Kata Sandi
                   </label>
+                  <a
+                    href="#lupa-password"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert('Silakan hubungi pemilik toko (Owner) Anda untuk melakukan reset kata sandi akun.');
+                    }}
+                    className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 transition-colors"
+                  >
+                    Lupa password?
+                  </a>
                 </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-slate-900 hover:bg-slate-800 shadow-md shadow-slate-900/15 transition-all duration-300 flex items-center justify-center gap-2 active:scale-98 disabled:opacity-75 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Memverifikasi Akun...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Masuk ke Akun</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-
-                {/* Bottom Link to Register */}
-                <div className="text-center pt-3 border-t border-slate-200/60">
-                  <p className="text-xs text-slate-600">
-                    Belum mendaftarkan tokomu?{' '}
-                    <Link
-                      href="/register"
-                      className="font-bold text-slate-900 hover:text-amber-700 underline underline-offset-4 decoration-amber-400/60 transition-colors"
-                    >
-                      Mulai gratis di sini
-                    </Link>
-                  </p>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                    className={`w-full bg-white/80 border rounded-xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
+                      errors.password
+                        ? 'border-rose-300 focus:ring-rose-200'
+                        : 'border-slate-200/80 focus:ring-amber-200/60 focus:border-amber-400'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    aria-label="Toggle password visibility"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
-              </form>
-            )}
+                {errors.password && (
+                  <p className="text-[11px] text-rose-600 mt-1">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Submit CTA */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-2 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-slate-900 hover:bg-slate-800 shadow-md shadow-slate-900/15 transition-all duration-300 flex items-center justify-center gap-2 active:scale-98 disabled:opacity-75 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Memverifikasi Akun...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Masuk ke Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              {/* Bottom Link to Register */}
+              <div className="text-center pt-3 border-t border-slate-200/60">
+                <p className="text-xs text-slate-600">
+                  Belum mendaftarkan tokomu?{' '}
+                  <Link
+                    href="/register"
+                    className="font-bold text-slate-900 hover:text-amber-700 underline underline-offset-4 decoration-amber-400/60 transition-colors"
+                  >
+                    Mulai gratis di sini
+                  </Link>
+                </p>
+              </div>
+            </form>
           </div>
         </div>
       </main>
 
-      {/* Subtle Bottom Footer Info */}
+      {/* Footer Info */}
       <footer className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-slate-400">
         <p>© {new Date().getFullYear()} Omni POS Technologies. Dilindungi enkripsi row-level tenant security.</p>
       </footer>
+
+      {/* Modal Khusus Pembatasan Akses Paket FREE (PLAN_RESTRICTED) */}
+      {planRestrictedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative max-w-md w-full bg-white/90 backdrop-blur-2xl border border-white p-7 rounded-3xl shadow-2xl ring-1 ring-inset ring-white/80">
+            {/* Close Button */}
+            <button
+              onClick={() => setPlanRestrictedModal(false)}
+              className="absolute top-5 right-5 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Icon Header */}
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 mb-4 shadow-xs">
+              <Smartphone className="w-6 h-6" />
+            </div>
+
+            {/* Content */}
+            <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+              Akses Web Khusus Paket PLUS & PRO
+            </h3>
+            <p className="mt-2.5 text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Toko Anda saat ini berada di paket <span className="font-bold text-slate-900">FREE</span> (Khusus Mobile POS Offline). Untuk mengakses Dashboard Backoffice Web, silakan gunakan aplikasi kasir mobile atau upgrade paket toko Anda.
+            </p>
+
+            {/* Actions */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
+              <Link
+                href="/#harga"
+                onClick={() => setPlanRestrictedModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl text-center text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-sm transition-all flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Lihat Pilihan Upgrade</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  alert('Unduhan APK Android & iOS Omni POS Mobile kasir akan segera tersedia di Google Play Store dan Apple App Store.');
+                }}
+                className="py-3 px-4 rounded-xl text-center text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 transition-all"
+              >
+                Unduh Aplikasi Mobile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
