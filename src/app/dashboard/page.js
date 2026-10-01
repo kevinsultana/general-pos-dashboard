@@ -1,270 +1,411 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
-  Layers,
-  Store,
-  User,
-  LogOut,
-  Sparkles,
-  ShoppingBag,
   TrendingUp,
-  Boxes,
-  Users,
-  ShieldCheck,
-  ExternalLink,
+  ShoppingBag,
+  Clock,
+  AlertTriangle,
+  Receipt,
+  Printer,
+  ChevronRight,
+  Filter,
+  PlusCircle,
+  ArrowUpRight,
+  CheckCircle2,
+  Hourglass,
+  QrCode,
+  CreditCard,
+  Banknote,
+  Sparkles,
+  Download,
+  Calendar,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { showConfirmDialog, showAlertNotice } from '../../lib/alerts';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, tenant, isLoading, isAuthenticated, logout } = useAuth();
+  const { user, tenant } = useAuth();
+  const [selectedFilter, setSelectedFilter] = useState('ALL');
 
-  // Proteksi rute: Jika tidak terotentikasi & loading selesai, redirect ke /login
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isLoading, isAuthenticated, router]);
+  // Contoh Data Transaksi Semasa yang Realistik untuk POS F&B / Runcit
+  const transactions = [
+    {
+      id: 'TRX-9082',
+      time: '15:42',
+      customer: 'Meja 06 (Dine-in)',
+      items: '2x Kopi Susu Aren, 1x Croissant',
+      method: 'QRIS',
+      methodIcon: QrCode,
+      amount: 78000,
+      status: 'COMPLETED',
+    },
+    {
+      id: 'TRX-9081',
+      time: '15:28',
+      customer: 'Budi Santoso (Take-away)',
+      items: '1x Caramel Macchiato, 1x Cinnamon Roll',
+      method: 'Tunai',
+      methodIcon: Banknote,
+      amount: 54000,
+      status: 'COMPLETED',
+    },
+    {
+      id: 'TRX-9080',
+      time: '15:15',
+      customer: 'Meja 02 (Dine-in)',
+      items: '4x Americano, 2x Truffle Fries',
+      method: 'Debit',
+      methodIcon: CreditCard,
+      amount: 142000,
+      status: 'COMPLETED',
+    },
+    {
+      id: 'TRX-9079',
+      time: '14:55',
+      customer: 'Meja 09 (Dine-in)',
+      items: '2x Matcha Latte, 1x Red Velvet Cake',
+      method: 'QRIS',
+      methodIcon: QrCode,
+      amount: 92000,
+      status: 'COMPLETED',
+    },
+    {
+      id: 'TRX-9078',
+      time: '14:40',
+      customer: 'Siti Aminah (Take-away)',
+      items: '1x Hazelnut Latte',
+      method: 'Tunai',
+      methodIcon: Banknote,
+      amount: 32000,
+      status: 'PROCESSING',
+    },
+  ];
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handlePrintReceipt = (trxId) => {
+    toast.success(`Menghantar perintah cetak struk ${trxId} ke pencetak Bluetooth/Thermal...`, {
+      icon: '🖨️',
+    });
   };
 
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-medium text-slate-500">Memuat sesi dashboard...</p>
-        </div>
-      </div>
+  const handleCloseShift = async () => {
+    const result = await showConfirmDialog({
+      title: 'Tutup Syif Kasir Semasa?',
+      text: 'Adakah anda ingin menutup syif ini dan menjana laporan imbangan wang tunai (laci tunai)?',
+      confirmButtonText: 'Ya, Tutup Syif',
+      cancelButtonText: 'Batal',
+      icon: 'question',
+    });
+
+    if (result.isConfirmed) {
+      toast.success('Syif kasir ditutup. Laporan ringkasan telah dijana ke peti masuk emel pengurus.', {
+        duration: 5000,
+      });
+    }
+  };
+
+  const handleExportReport = () => {
+    toast.promise(
+      new Promise((resolve) => setTimeout(resolve, 1000)),
+      {
+        loading: 'Menjana fail laporan jualan Excel/PDF...',
+        success: 'Fail laporan harian sedia dimuat turun!',
+        error: 'Gagal menjana laporan.',
+      }
     );
-  }
-
-  const getPlanBadge = (plan) => {
-    switch (plan) {
-      case 'PRO':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'PLUS':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      default:
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    }
   };
+
+  const filteredTransactions = transactions.filter((trx) => {
+    if (selectedFilter === 'COMPLETED') return trx.status === 'COMPLETED';
+    if (selectedFilter === 'PROCESSING') return trx.status === 'PROCESSING';
+    return true;
+  });
 
   return (
-    <div className="relative min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-amber-100 selection:text-amber-900 overflow-x-hidden">
-      {/* Background Soft Liquid Aura Blobs */}
-      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        {/* Liquid Orb 1: Soft Peach */}
-        <div className="absolute -top-32 -left-32 w-140 h-140 rounded-full bg-[#fed7aa]/55 blur-[120px] mix-blend-multiply" />
+    <div className="space-y-6">
+      {/* 1. Header Bar: Ucapan Selamat & Butang Tindakan Pantas */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50/90 border border-amber-200/70 text-amber-800 text-[11px] font-bold mb-2 shadow-2xs">
+            <Calendar className="w-3 h-3 text-amber-600" />
+            <span>
+              {new Date().toLocaleDateString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Papan Pemuka Kasir & Analitik
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Selamat bertugas, <span className="font-bold text-slate-800">{user?.name}</span>. Pantau
+            operasi harian kedai <span className="font-semibold text-slate-700">{tenant?.name}</span>.
+          </p>
+        </div>
 
-        {/* Liquid Orb 2: Frosted Sage */}
-        <div className="absolute top-1/3 -right-32 w-130 h-130 rounded-full bg-[#bbf7d0]/45 blur-[130px] mix-blend-multiply" />
+        {/* Tindakan Pantas Header */}
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleExportReport}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-white/80 hover:bg-white border border-slate-200/80 shadow-2xs transition-all active:scale-95"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Eksport Data</span>
+          </button>
 
-        {/* Liquid Orb 3: Cream Rose / Lavender Mist */}
-        <div className="absolute top-2/3 left-1/4 w-140 h-140 rounded-full bg-[#f5d0fe]/40 blur-[130px] mix-blend-multiply" />
+          <button
+            type="button"
+            onClick={() =>
+              toast('Membuka terminal juruwang pantas...', {
+                icon: '🛒',
+              })
+            }
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-md shadow-slate-900/15 transition-all active:scale-95"
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>Pesanan Baharu</span>
+          </button>
+        </div>
       </div>
 
-      {/* Top Navbar Dashboard */}
-      <header className="sticky top-4 z-40 max-w-6xl mx-auto px-4 sm:px-6 w-full">
-        <div className="bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] ring-1 ring-inset ring-white/60 rounded-full px-5 py-3 flex items-center justify-between transition-all">
-          {/* Brand Logo & Store Info */}
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-xs group-hover:scale-105 transition-transform">
-                <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                  <Layers className="w-4 h-4 text-amber-600" />
-                </div>
-              </div>
-              <span className="text-base font-bold tracking-tight text-slate-900 hidden sm:inline-block">
-                Omni<span className="text-amber-600">POS</span>
-              </span>
-            </Link>
-
-            <span className="h-4 w-px bg-slate-200" />
-
-            {/* Tenant Capsule */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200/60 text-xs font-semibold text-slate-800">
-                <Store className="w-3.5 h-3.5 text-amber-600" />
-                <span>{tenant?.name || 'Toko Saya'}</span>
-              </div>
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${getPlanBadge(
-                  tenant?.plan
-                )}`}
-              >
-                Paket {tenant?.plan || 'FREE'}
-              </span>
+      {/* 2. Kad Metrik Ringkasan (KPI Stats Grid: 4 Glassmorphic Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Kad 1: Jumlah Jualan Hari Ini */}
+        <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between text-slate-500 mb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Jualan Hari Ini
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-2xs">
+              <TrendingUp className="w-4 h-4" />
             </div>
           </div>
+          <p className="text-2xl font-black text-slate-900 tracking-tight">Rp 4.850.000</p>
+          <div className="flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-emerald-600">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>+18.4% vs kelmarin</span>
+          </div>
+        </div>
 
-          {/* User Profile & Logout */}
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 text-right">
-              <div>
-                <p className="text-xs font-bold text-slate-800">{user?.name || 'Pengguna'}</p>
-                <p className="text-[10px] text-slate-400 font-mono">
-                  omnipos.app/store/{tenant?.slug}
-                </p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 font-bold text-xs">
-                {(user?.name || 'U').charAt(0).toUpperCase()}
-              </div>
+        {/* Kad 2: Bilangan Transaksi */}
+        <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between text-slate-500 mb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Transaksi Selesai
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-2xs">
+              <ShoppingBag className="w-4 h-4" />
             </div>
+          </div>
+          <p className="text-2xl font-black text-slate-900 tracking-tight">52 Pesanan</p>
+          <p className="text-[11px] font-medium text-slate-500 mt-2">
+            Purata tiket: <span className="font-bold text-slate-700">Rp 93.200</span>
+          </p>
+        </div>
 
+        {/* Kad 3: Status Syif Kasir */}
+        <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between text-slate-500 mb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Syif Semasa
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <p className="text-2xl font-black text-slate-900 tracking-tight">Syif Pagi</p>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-[11px] text-slate-500">Laci Tunai: Rp 500k</span>
             <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 transition-all active:scale-95"
-              title="Keluar dari akun"
+              onClick={handleCloseShift}
+              className="text-[10px] font-bold text-rose-600 hover:text-rose-700 underline underline-offset-2"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Logout</span>
+              Tutup Syif
             </button>
           </div>
         </div>
-      </header>
 
-      {/* Main Dashboard Area */}
-      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full">
-        {/* Welcome Banner Card */}
-        <div className="relative rounded-3xl p-8 bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_12px_40px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/60 mb-8 overflow-hidden">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold mb-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Multi-Tenant Row-Level Isolated</span>
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Halo, {user?.name}! 👋
-              </h1>
-              <p className="mt-2 text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
-                Selamat datang di portal manajemen toko{' '}
-                <span className="font-semibold text-slate-900">{tenant?.name}</span>. Data toko Anda
-                tersimpan aman dengan row-level tenant security di server PostgreSQL.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/#harga"
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-slate-800 bg-white hover:bg-slate-50 border border-slate-200/80 shadow-2xs transition-all"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Kelola Paket Langganan</span>
-              </Link>
+        {/* Kad 4: Amaran Inventori & Stok */}
+        <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
+          <div className="flex items-center justify-between text-slate-500 mb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Amaran Stok
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-2xs">
+              <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
+          <p className="text-2xl font-black text-slate-900 tracking-tight">3 SKU Menipis</p>
+          <p className="text-[11px] font-medium text-slate-500 mt-2 truncate">
+            Biji Kopi Arabica & Susu UHT
+          </p>
         </div>
+      </div>
 
-        {/* Quick Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-xs ring-1 ring-inset ring-white/60">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-medium">Penjualan Hari Ini</span>
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
+      {/* 3. Jadual Transaksi Terkini (Frosted Glass Table) */}
+      <div className="rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/60 p-6 space-y-5">
+        {/* Header Jadual & Penapis */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/60">
+          <div>
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-amber-600" />
+              <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
+                Transaksi Jualan Terkini
+              </h2>
             </div>
-            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">Rp 0</p>
-            <p className="text-[11px] text-slate-400 mt-1">Shift aktif sedang berjalan</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-xs ring-1 ring-inset ring-white/60">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-medium">Total Transaksi</span>
-              <ShoppingBag className="w-4 h-4 text-amber-600" />
-            </div>
-            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">0 Order</p>
-            <p className="text-[11px] text-slate-400 mt-1">Siap mencetak struk thermal</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-xs ring-1 ring-inset ring-white/60">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-medium">Katalog Produk</span>
-              <Boxes className="w-4 h-4 text-slate-600" />
-            </div>
-            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">Siap Dikelola</p>
-            <p className="text-[11px] text-slate-400 mt-1">Kategori menu & SKU inventaris</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-xs ring-1 ring-inset ring-white/60">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-medium">Hak Akses (RBAC)</span>
-              <Users className="w-4 h-4 text-purple-600" />
-            </div>
-            <p className="text-xl sm:text-2xl font-extrabold text-slate-900">
-              {user?.isOwner ? 'Owner Utama' : 'Kasir'}
+            <p className="text-xs text-slate-500 mt-0.5">
+              Rekod pesanan yang masuk secara langsung melalui terminal kasir aktif.
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">Izin akses penuh sistem</p>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/80 border border-slate-200/60 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setSelectedFilter('ALL')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                selectedFilter === 'ALL'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedFilter('COMPLETED')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                selectedFilter === 'COMPLETED'
+                  ? 'bg-white text-emerald-700 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Selesai
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedFilter('PROCESSING')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                selectedFilter === 'PROCESSING'
+                  ? 'bg-white text-amber-700 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Sedang Diproses
+            </button>
           </div>
         </div>
 
-        {/* Tenant Information Summary Card */}
-        <div className="rounded-3xl p-6 sm:p-8 bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/60 space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Detail Multi-Tenant Toko</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Informasi konfigurasi database dan kredensial akses tenant Anda.
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Database Terhubung</span>
-            </div>
-          </div>
+        {/* Senarai Jadual Responsive */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200/50 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                <th className="py-3 px-3">No. Pesanan</th>
+                <th className="py-3 px-3">Masa & Pelanggan</th>
+                <th className="py-3 px-3">Item Pesanan</th>
+                <th className="py-3 px-3">Kaedah</th>
+                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3 text-right">Jumlah</th>
+                <th className="py-3 px-3 text-center">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {filteredTransactions.map((trx) => {
+                const MethodIcon = trx.methodIcon;
+                return (
+                  <tr
+                    key={trx.id}
+                    className="hover:bg-white/90 transition-colors group"
+                  >
+                    {/* ID */}
+                    <td className="py-3.5 px-3 font-mono font-bold text-slate-800">
+                      #{trx.id}
+                    </td>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-xs">
-            <div>
-              <p className="text-slate-400 font-medium mb-1">Nama Toko</p>
-              <p className="text-sm font-bold text-slate-800">{tenant?.name}</p>
-            </div>
+                    {/* Masa & Pelanggan */}
+                    <td className="py-3.5 px-3">
+                      <p className="font-semibold text-slate-800">{trx.customer}</p>
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">{trx.time}</p>
+                    </td>
 
-            <div>
-              <p className="text-slate-400 font-medium mb-1">Store Slug (Subdomain)</p>
-              <p className="text-sm font-bold font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block">
-                {tenant?.slug}
-              </p>
-            </div>
+                    {/* Ringkasan Item */}
+                    <td className="py-3.5 px-3 max-w-50 truncate text-slate-600">
+                      {trx.items}
+                    </td>
 
-            <div>
-              <p className="text-slate-400 font-medium mb-1">Tenant ID</p>
-              <p className="text-xs font-mono text-slate-600 truncate">{tenant?.id}</p>
-            </div>
+                    {/* Kaedah Bayaran */}
+                    <td className="py-3.5 px-3">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 border border-slate-200/60 text-[11px] font-semibold text-slate-700">
+                        <MethodIcon className="w-3.5 h-3.5 text-amber-600" />
+                        <span>{trx.method}</span>
+                      </div>
+                    </td>
 
-            <div>
-              <p className="text-slate-400 font-medium mb-1">Email Akun</p>
-              <p className="text-sm font-bold text-slate-800">{user?.email}</p>
-            </div>
+                    {/* Status Bayaran */}
+                    <td className="py-3.5 px-3">
+                      {trx.status === 'COMPLETED' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Selesai</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold">
+                          <Hourglass className="w-3 h-3 animate-spin" />
+                          <span>Sedang Diproses</span>
+                        </span>
+                      )}
+                    </td>
 
-            <div>
-              <p className="text-slate-400 font-medium mb-1">Role Akun</p>
-              <p className="text-sm font-bold text-slate-800">
-                {user?.isOwner ? 'Owner (Pemilik Toko)' : 'Karyawan / Kasir'}
-              </p>
-            </div>
+                    {/* Jumlah Nilai */}
+                    <td className="py-3.5 px-3 text-right font-extrabold text-slate-900">
+                      Rp {trx.amount.toLocaleString('id-ID')}
+                    </td>
 
-            <div>
-              <p className="text-slate-400 font-medium mb-1">Paket Berlangganan</p>
-              <p className="text-sm font-bold text-slate-800 uppercase">
-                {tenant?.plan || 'FREE'}{' '}
-                <span className="text-[10px] text-slate-500 font-normal">
-                  ({tenant?.planStatus || 'ACTIVE'})
-                </span>
-              </p>
-            </div>
-          </div>
+                    {/* Butang Tindakan Cetak Struk */}
+                    <td className="py-3.5 px-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handlePrintReceipt(trx.id)}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all shadow-2xs"
+                        title="Cetak Struk Thermal"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-slate-400 border-t border-slate-200/50 mt-12">
-        <p>© {new Date().getFullYear()} Omni POS Technologies. Sesi aktif terenkripsi aman.</p>
-      </footer>
+        {/* Kaki Jadual */}
+        <div className="pt-3 border-t border-slate-200/50 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+          <span>Menunjukkan 5 transaksi terbaharu daripada 52 pesanan hari ini</span>
+          <button
+            type="button"
+            onClick={() =>
+              toast('Membuka arkib sejarah transaksi penuh...', {
+                icon: '📋',
+              })
+            }
+            className="font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
+          >
+            <span>Lihat Semua Transaksi</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
