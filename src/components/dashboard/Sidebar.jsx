@@ -60,7 +60,7 @@ export default function Sidebar({ onCloseMobile }) {
   };
 
   const handlePlaceholderClick = (e, title, href) => {
-    if (href !== '/dashboard' && href !== '/dashboard/upgrade' && href !== '/dashboard/store-profile') {
+    if (href !== '/dashboard' && href !== '/dashboard/upgrade' && href !== '/dashboard/settings') {
       e.preventDefault();
       toast(t('dashboard.sidebar.moduleSyncNotice', { title }), {
         icon: '⚡',
@@ -75,9 +75,9 @@ export default function Sidebar({ onCloseMobile }) {
       group: t('dashboard.sidebar.groups.freeAccount'),
       items: [
         {
-          name: t('dashboard.sidebar.items.storeProfile'),
-          href: '/dashboard/store-profile',
-          icon: Store,
+          name: t('dashboard.sidebar.items.storeSettings') || t('dashboard.sidebar.items.storeProfile'),
+          href: '/dashboard/settings',
+          icon: Settings,
           badge: t('common.active'),
           badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           isLocked: false,
@@ -224,9 +224,9 @@ export default function Sidebar({ onCloseMobile }) {
           minPlan: 'PRO',
         },
         {
-          name: t('dashboard.sidebar.items.storeProfile'),
-          href: '/dashboard/store-profile',
-          icon: Store,
+          name: t('dashboard.sidebar.items.storeSettings') || t('dashboard.sidebar.items.storeProfile'),
+          href: '/dashboard/settings',
+          icon: Settings,
           badge: null,
           isLocked: false,
         },
@@ -238,19 +238,12 @@ export default function Sidebar({ onCloseMobile }) {
           badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
           isLocked: false,
         },
-        {
-          name: t('dashboard.sidebar.items.settings'),
-          href: '/dashboard/settings',
-          icon: Settings,
-          badge: null,
-          isLocked: false,
-        },
       ],
     },
   ];
 
   const activeSections = isFreePlan ? freeNavSections : paidNavSections;
-  const brandHref = isFreePlan ? '/dashboard/store-profile' : '/dashboard';
+  const brandHref = isFreePlan ? '/dashboard/settings' : '/dashboard';
 
   return (
     <aside className="w-full h-full flex flex-col justify-between p-4 sm:p-5 select-none text-slate-800">

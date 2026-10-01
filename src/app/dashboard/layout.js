@@ -23,15 +23,15 @@ export default function DashboardLayout({ children }) {
   }, [isLoading, isAuthenticated, router]);
 
   // Proteksi Rute Paket FREE:
-  // Akun FREE hanya boleh mengakses Detail Toko (/dashboard/store-profile) dan Upgrade (/dashboard/upgrade).
+  // Akun FREE hanya boleh mengakses Pengaturan Toko (/dashboard/settings) dan Upgrade (/dashboard/upgrade).
   // Jika membuka route operasional (seperti /dashboard/pos, /dashboard/transactions), arahkan ke /dashboard/upgrade.
-  // Jika membuka root /dashboard, arahkan ke /dashboard/store-profile.
+  // Jika membuka root /dashboard, arahkan ke /dashboard/settings.
   useEffect(() => {
     if (!isLoading && isAuthenticated && tenant?.plan === 'FREE') {
-      if (pathname === '/dashboard') {
-        router.replace('/dashboard/store-profile');
+      if (pathname === '/dashboard' || pathname === '/dashboard/store-profile') {
+        router.replace('/dashboard/settings');
       } else if (
-        pathname !== '/dashboard/store-profile' &&
+        pathname !== '/dashboard/settings' &&
         pathname !== '/dashboard/upgrade'
       ) {
         router.replace('/dashboard/upgrade');
