@@ -1,70 +1,74 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Check, Sparkles, Zap, ArrowRight } from "lucide-react";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Check, Sparkles, Zap, ArrowRight } from 'lucide-react';
 
-export default function Pricing({ onOpenRegister }) {
+export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
 
   const tiers = [
     {
-      name: "FREE",
-      tagline: "Cocok untuk kedai rintisan & pop-up booth baru mulai",
+      name: 'FREE',
+      planId: 'free',
+      tagline: 'Cocok untuk kedai rintisan & pop-up booth baru mulai',
       priceMonthly: 0,
       priceAnnual: 0,
       popular: false,
-      badge: "Bebas Biaya Selamanya",
+      badge: 'Bebas Biaya Selamanya',
       features: [
-        "1 Toko / 1 Cabang Utama",
-        "1 User Kasir / Owner",
-        "Kasir Cepat & Struk Thermal Bluetooth",
-        "Ringkasan Laporan Penjualan Harian",
-        "Katalog Hingga 100 Produk Menu",
-        "Offline-First Local Sync",
+        '1 Toko / 1 Cabang Utama',
+        '1 User Kasir / Owner',
+        'Kasir Cepat & Struk Thermal Bluetooth',
+        'Ringkasan Laporan Penjualan Harian',
+        'Katalog Hingga 100 Produk Menu',
+        'Offline-First Local Sync',
       ],
-      ctaText: "Mulai Gratis",
+      ctaText: 'Mulai Gratis',
       ctaStyle:
-        "bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200/80 font-bold",
+        'bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200/80 font-bold',
     },
     {
-      name: "PLUS",
-      tagline: "Paling diminati kafe & resto mandiri yang bertumbuh pesat",
+      name: 'PLUS',
+      planId: 'plus',
+      tagline: 'Paling diminati kafe & resto mandiri yang bertumbuh pesat',
       priceMonthly: 149000,
       priceAnnual: 119000,
       popular: true,
-      badge: "Paling Diminati",
+      badge: 'Paling Diminati',
       features: [
-        "1 Cabang Utama Bebas Batasan Omzet",
-        "Multi-User dengan Dynamic RBAC (Owner, Kasir, Spv)",
-        "Manajemen Shift & Rekonsiliasi Cash Drawer",
-        "Opname Stok Inventaris & Alert Bahan Menipis",
-        "Analitik Penjualan Mendalam & Ekspor Excel",
-        "Split Bill & Custom Pajak PB1 / Service Charge",
-        "Dukungan Prioritas CS WhatsApp 24/7",
+        '1 Cabang Utama Bebas Batasan Omzet',
+        'Multi-User dengan Dynamic RBAC (Owner, Kasir, Spv)',
+        'Manajemen Shift & Rekonsiliasi Cash Drawer',
+        'Opname Stok Inventaris & Alert Bahan Menipis',
+        'Analitik Penjualan Mendalam & Ekspor Excel',
+        'Split Bill & Custom Pajak PB1 / Service Charge',
+        'Dukungan Prioritas CS WhatsApp 24/7',
       ],
-      ctaText: "Pilih Paket Plus",
+      ctaText: 'Pilih Paket Plus',
       ctaStyle:
-        "bg-slate-900 hover:bg-slate-800 text-white font-extrabold shadow-md shadow-slate-900/15",
+        'bg-slate-900 hover:bg-slate-800 text-white font-extrabold shadow-md shadow-slate-900/15',
     },
     {
-      name: "PRO",
-      tagline: "Standar emas untuk waralaba dan jaringan multi-outlet",
+      name: 'PRO',
+      planId: 'pro',
+      tagline: 'Standar emas untuk waralaba dan jaringan multi-outlet',
       priceMonthly: 399000,
       priceAnnual: 319000,
       popular: false,
-      badge: "Skala Multi-Cabang",
+      badge: 'Skala Multi-Cabang',
       features: [
-        "Semua fitur pada Paket Plus",
-        "Multi-Cabang (Multi-Outlet) Tak Terbatas",
-        "Transfer & Distribusi Stok Antar Cabang",
-        "Laporan Konsolidasi Laba Rugi Semua Outlet",
-        "Integrasi API Webhook & Custom ERP Accounting",
-        "Audit Log Aktivitas Sensitif (Void/Diskon)",
-        "Dedicated Technical Account Manager",
+        'Semua fitur pada Paket Plus',
+        'Multi-Cabang (Multi-Outlet) Tak Terbatas',
+        'Transfer & Distribusi Stok Antar Cabang',
+        'Laporan Konsolidasi Laba Rugi Semua Outlet',
+        'Integrasi API Webhook & Custom ERP Accounting',
+        'Audit Log Aktivitas Sensitif (Void/Diskon)',
+        'Dedicated Technical Account Manager',
       ],
-      ctaText: "Pilih Paket Pro",
+      ctaText: 'Pilih Paket Pro',
       ctaStyle:
-        "bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-bold shadow-2xs",
+        'bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-bold shadow-2xs',
     },
   ];
 
@@ -81,15 +85,14 @@ export default function Pricing({ onOpenRegister }) {
             Pilihan Paket Sesuai Fase Skala Usahamu
           </h2>
           <p className="mt-4 text-slate-600 text-sm sm:text-base leading-relaxed">
-            Mulai dari paket gratis selamanya tanpa kartu kredit. Upgrade kapan
-            saja saat tokomu membuka cabang baru.
+            Mulai dari paket gratis selamanya tanpa kartu kredit. Upgrade kapan saja saat tokomu membuka cabang baru.
           </p>
 
           {/* Annual / Monthly Toggle */}
           <div className="mt-8 flex items-center justify-center gap-3">
             <span
               className={`text-xs sm:text-sm font-semibold ${
-                !isAnnual ? "text-slate-900" : "text-slate-500"
+                !isAnnual ? 'text-slate-900' : 'text-slate-500'
               }`}
             >
               Tagihan Bulanan
@@ -101,14 +104,14 @@ export default function Pricing({ onOpenRegister }) {
             >
               <div
                 className={`w-5 h-5 rounded-full bg-amber-500 shadow-sm transform transition-transform duration-300 ${
-                  isAnnual ? "translate-x-7" : "translate-x-0"
+                  isAnnual ? 'translate-x-7' : 'translate-x-0'
                 }`}
               />
             </button>
             <div className="flex items-center gap-1.5">
               <span
                 className={`text-xs sm:text-sm font-semibold ${
-                  isAnnual ? "text-slate-900" : "text-slate-500"
+                  isAnnual ? 'text-slate-900' : 'text-slate-500'
                 }`}
               >
                 Tagihan Tahunan
@@ -129,8 +132,8 @@ export default function Pricing({ onOpenRegister }) {
                 key={tier.name}
                 className={`relative rounded-3xl p-8 backdrop-blur-2xl transition-all duration-300 flex flex-col justify-between ${
                   tier.popular
-                    ? "bg-white/85 border-2 border-amber-400/60 ring-2 ring-amber-400/40 shadow-[0_20px_50px_rgba(245,158,11,0.12)] lg:-translate-y-2"
-                    : "bg-white/65 hover:bg-white/85 border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/60"
+                    ? 'bg-white/85 border-2 border-amber-400/60 ring-2 ring-amber-400/40 shadow-[0_20px_50px_rgba(245,158,11,0.12)] lg:-translate-y-2'
+                    : 'bg-white/65 hover:bg-white/85 border border-white/80 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/60'
                 }`}
               >
                 {/* Popular Pill */}
@@ -144,36 +147,27 @@ export default function Pricing({ onOpenRegister }) {
                 <div>
                   {/* Tier Title & Tagline */}
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-slate-900 tracking-wide">
-                      {tier.name}
-                    </h3>
+                    <h3 className="text-xl font-bold text-slate-900 tracking-wide">{tier.name}</h3>
                     {!tier.popular && (
                       <span className="text-[11px] font-semibold text-slate-500 px-2.5 py-0.5 rounded-full bg-slate-100">
                         {tier.badge}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-2 min-h-9">
-                    {tier.tagline}
-                  </p>
+                  <p className="text-xs text-slate-500 mt-2 min-h-9">{tier.tagline}</p>
 
                   {/* Price */}
                   <div className="mt-6 pb-6 border-b border-slate-100">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-slate-500">
-                        Rp
-                      </span>
+                      <span className="text-2xl font-bold text-slate-500">Rp</span>
                       <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                        {price.toLocaleString("id-ID")}
+                        {price.toLocaleString('id-ID')}
                       </span>
-                      <span className="text-xs text-slate-500 ml-1">
-                        / bulan
-                      </span>
+                      <span className="text-xs text-slate-500 ml-1">/ bulan</span>
                     </div>
                     {isAnnual && price > 0 && (
                       <p className="text-[11px] text-emerald-700 font-semibold mt-1">
-                        Ditagih tahunan (hemat Rp{" "}
-                        {(tier.priceMonthly - tier.priceAnnual) * 12}/thn)
+                        Ditagih tahunan (hemat Rp {(tier.priceMonthly - tier.priceAnnual) * 12}/thn)
                       </p>
                     )}
                   </div>
@@ -184,10 +178,7 @@ export default function Pricing({ onOpenRegister }) {
                       Semua yang kamu dapatkan:
                     </p>
                     {tier.features.map((feature) => (
-                      <div
-                        key={feature}
-                        className="flex items-start gap-3 text-xs sm:text-sm text-slate-600"
-                      >
+                      <div key={feature} className="flex items-start gap-3 text-xs sm:text-sm text-slate-600">
                         <div className="w-4 h-4 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mt-0.5 shrink-0">
                           <Check className="w-2.5 h-2.5" />
                         </div>
@@ -199,13 +190,13 @@ export default function Pricing({ onOpenRegister }) {
 
                 {/* Plan Action CTA */}
                 <div className="pt-4">
-                  <button
-                    onClick={() => onOpenRegister?.("register", tier.name)}
+                  <Link
+                    href={`/register?plan=${tier.planId}`}
                     className={`w-full py-3.5 rounded-full text-xs sm:text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 ${tier.ctaStyle}`}
                   >
                     <span>{tier.ctaText}</span>
                     <ArrowRight className="w-4 h-4" />
-                  </button>
+                  </Link>
                 </div>
               </div>
             );

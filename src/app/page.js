@@ -1,35 +1,10 @@
-"use client";
-
-import { useState } from "react";
-import Navbar from "../components/landing/Navbar";
-import Hero from "../components/landing/Hero";
-import Features from "../components/landing/Features";
-import Pricing from "../components/landing/Pricing";
-import RegisterModal from "../components/landing/RegisterModal";
-import Footer from "../components/landing/Footer";
+import Navbar from '../components/landing/Navbar';
+import Hero from '../components/landing/Hero';
+import Features from '../components/landing/Features';
+import Pricing from '../components/landing/Pricing';
+import Footer from '../components/landing/Footer';
 
 export default function Home() {
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    mode: "register", // 'register' | 'login'
-    tier: "FREE",
-  });
-
-  const handleOpenModal = (mode = "register", tier = "FREE") => {
-    setModalState({
-      isOpen: true,
-      mode,
-      tier,
-    });
-  };
-
-  const handleCloseModal = () => {
-    setModalState((prev) => ({
-      ...prev,
-      isOpen: false,
-    }));
-  };
-
   return (
     <div className="relative min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-amber-100 selection:text-amber-900 overflow-x-hidden">
       {/* Background Soft Liquid Aura Blobs */}
@@ -48,30 +23,22 @@ export default function Home() {
       </div>
 
       {/* Floating Liquid Capsule Navbar */}
-      <Navbar onOpenRegister={handleOpenModal} />
+      <Navbar />
 
       {/* Main Content */}
       <main className="flex-1">
         {/* Hero Section & Glass POS Dashboard Mockup */}
-        <Hero onOpenRegister={handleOpenModal} />
+        <Hero />
 
         {/* Core Features & Value Metrics */}
         <Features />
 
         {/* Subscription Pricing */}
-        <Pricing onOpenRegister={handleOpenModal} />
+        <Pricing />
       </main>
 
       {/* Footer */}
       <Footer />
-
-      {/* Interactive Tenant Registration & Login Onboarding Modal */}
-      <RegisterModal
-        isOpen={modalState.isOpen}
-        onClose={handleCloseModal}
-        initialMode={modalState.mode}
-        selectedTier={modalState.tier}
-      />
     </div>
   );
 }
