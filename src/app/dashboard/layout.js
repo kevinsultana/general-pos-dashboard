@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Sidebar from '../../components/dashboard/Sidebar';
 import TopNavbar from '../../components/dashboard/TopNavbar';
+import OnboardingWizardModal from '../../components/dashboard/OnboardingWizardModal';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -123,6 +124,9 @@ export default function DashboardLayout({ children }) {
 
           {/* Paparan Kandungan Halaman Dinamik */}
           <main className="flex-1 pb-10">{children}</main>
+
+          {/* Onboarding Wizard Otomatis untuk Tenant Baru */}
+          <OnboardingWizardModal />
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   TrendingUp,
@@ -21,112 +21,98 @@ import {
   Sparkles,
   Download,
   Calendar,
+  Layers,
+  Store,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { showConfirmDialog, showAlertNotice } from '../../lib/alerts';
+import api from '../../lib/api';
 
 export default function DashboardPage() {
-  const { user, tenant } = useAuth();
+  const { user, tenant, activeBranch } = useAuth();
   const { t, language } = useLanguage();
   const [selectedFilter, setSelectedFilter] = useState('ALL');
 
-  // Contoh Data Transaksi Semasa yang Realistik untuk POS F&B / Runcit
-  const transactions = [
-    {
-      id: 'TRX-9082',
-      time: '15:42',
-      customer: 'Meja 06 (Dine-in)',
-      items: '2x Kopi Susu Aren, 1x Croissant',
-      method: 'QRIS',
-      methodIcon: QrCode,
-      amount: 78000,
-      status: 'COMPLETED',
-    },
-    {
-      id: 'TRX-9081',
-      time: '15:28',
-      customer: 'Budi Santoso (Take-away)',
-      items: '1x Caramel Macchiato, 1x Cinnamon Roll',
-      method: 'Tunai',
-      methodIcon: Banknote,
-      amount: 54000,
-      status: 'COMPLETED',
-    },
-    {
-      id: 'TRX-9080',
-      time: '15:15',
-      customer: 'Meja 02 (Dine-in)',
-      items: '4x Americano, 2x Truffle Fries',
-      method: 'Debit',
-      methodIcon: CreditCard,
-      amount: 142000,
-      status: 'COMPLETED',
-    },
-    {
-      id: 'TRX-9079',
-      time: '14:55',
-      customer: 'Meja 09 (Dine-in)',
-      items: '2x Matcha Latte, 1x Red Velvet Cake',
-      method: 'QRIS',
-      methodIcon: QrCode,
-      amount: 92000,
-      status: 'COMPLETED',
-    },
-    {
-      id: 'TRX-9078',
-      time: '14:40',
-      customer: 'Siti Aminah (Take-away)',
-      items: '1x Hazelnut Latte',
-      method: 'Tunai',
-      methodIcon: Banknote,
-      amount: 32000,
-      status: 'PROCESSING',
-    },
-  ];
+  // Real data states
+  const [summary, setSummary] = useState(null);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [activeShift, setActiveShift] = useState(null);
+  const [lowStockCount, setLowStockCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const handlePrintReceipt = (trxId) => {
-    toast.success(t('dashboard.page.printReceiptNotice', { id: trxId }), {
+  // Fetch real data from backend
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const [summaryRes, ordersRes, shiftRes, productsRes] = await Promise.allSettled([
+        api.get('/reports/summary', { params: { startDate: todayStr, endDate: todayStr } }),
+        api.get('/orders', { params: { limit: 8 } }),
+        api.get('/shifts/active'),
+        api.get('/products', { params: { limit: 50 } }),
+      ]);
+
+      if (summaryRes.status === 'fulfilled' && summaryRes.value.data?.success) {
+        setSummary(summaryRes.value.data.data);
+      }
+
+      if (ordersRes.status === 'fulfilled' && ordersRes.value.data?.success) {
+        setRecentOrders(ordersRes.value.data.data || []);
+      }
+
+      if (shiftRes.status === 'fulfilled' && shiftRes.value.data?.success) {
+        setActiveShift(shiftRes.value.data.data);
+      }
+
+      if (productsRes.status === 'fulfilled' && productsRes.value.data?.success) {
+        const prods = productsRes.value.data.data || [];
+        const low = prods.filter((p) => {
+          const totalStock = p.stocks?.reduce((acc, s) => acc + (s.quantity || 0), 0) || 0;
+          return totalStock <= (p.minStock || 5);
+        });
+        setLowStockCount(low.length);
+      }
+    } catch (err) {
+      console.error('Failed to load dashboard metrics:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const handlePrintReceipt = (orderNo) => {
+    toast.success(t('dashboard.page.printReceiptNotice', { id: orderNo }) || `Mencetak struk transaksi #${orderNo}`, {
       icon: '🖨️',
     });
+    window.print();
   };
 
-  const handleCloseShift = async () => {
-    const result = await showConfirmDialog({
-      title: t('dashboard.page.kpiShiftConfirmTitle'),
-      text: t('dashboard.page.kpiShiftConfirmText'),
-      confirmButtonText: t('dashboard.page.kpiShiftConfirmBtn'),
-      cancelButtonText: t('common.cancel'),
-      icon: 'question',
-    });
-
-    if (result.isConfirmed) {
-      toast.success(t('dashboard.shiftClosedSuccess'), {
-        duration: 5000,
-      });
+  const getMethodIcon = (method) => {
+    switch (method) {
+      case 'QRIS':
+        return QrCode;
+      case 'DEBIT':
+      case 'TRANSFER':
+        return CreditCard;
+      default:
+        return Banknote;
     }
   };
 
-  const handleExportReport = () => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1000)),
-      {
-        loading: t('dashboard.exportLoading'),
-        success: t('dashboard.exportSuccess'),
-        error: 'Failed to export',
-      }
-    );
-  };
-
-  const filteredTransactions = transactions.filter((trx) => {
-    if (selectedFilter === 'COMPLETED') return trx.status === 'COMPLETED';
-    if (selectedFilter === 'PROCESSING') return trx.status === 'PROCESSING';
+  // Filter orders
+  const filteredOrders = recentOrders.filter((ord) => {
+    if (selectedFilter === 'COMPLETED') return ord.status === 'COMPLETED';
+    if (selectedFilter === 'PROCESSING') return ord.status !== 'COMPLETED';
     return true;
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* 1. Header Bar: Ucapan Selamat & Butang Tindakan Pantas */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -154,27 +140,21 @@ export default function DashboardPage() {
 
         {/* Tindakan Pantas Header */}
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={handleExportReport}
+          <Link
+            href="/dashboard/reports"
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-white/80 hover:bg-white border border-slate-200/80 shadow-2xs transition-all active:scale-95"
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>{t('dashboard.page.exportBtn')}</span>
-          </button>
+            <span>Laporan Lengkap</span>
+          </Link>
 
-          <button
-            type="button"
-            onClick={() =>
-              toast(t('dashboard.page.newOrderNotice'), {
-                icon: '🛒',
-              })
-            }
+          <Link
+            href="/dashboard/pos"
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-md shadow-slate-900/15 transition-all active:scale-95"
           >
             <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
             <span>{t('dashboard.page.newOrderBtn')}</span>
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -190,10 +170,12 @@ export default function DashboardPage() {
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 tracking-tight">Rp 4.850.000</p>
+          <p className="text-2xl font-black text-slate-900 tracking-tight">
+            Rp {(summary?.grossSales || 0).toLocaleString('id-ID')}
+          </p>
           <div className="flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-emerald-600">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>{t('dashboard.page.kpiSalesVs')}</span>
+            <span>Hari Ini Terkini</span>
           </div>
         </div>
 
@@ -208,11 +190,13 @@ export default function DashboardPage() {
             </div>
           </div>
           <p className="text-2xl font-black text-slate-900 tracking-tight">
-            52 {t('dashboard.page.kpiTrxUnit')}
+            {summary?.totalTransactions || 0} {t('dashboard.page.kpiTrxUnit')}
           </p>
           <p className="text-[11px] font-medium text-slate-500 mt-2">
             {t('dashboard.page.kpiTrxAvg')}{' '}
-            <span className="font-bold text-slate-700">Rp 93.200</span>
+            <span className="font-bold text-slate-700">
+              Rp {(summary?.avgTicketSize || 0).toLocaleString('id-ID')}
+            </span>
           </p>
         </div>
 
@@ -228,20 +212,20 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <p className="text-2xl font-black text-slate-900 tracking-tight">
-              {t('dashboard.page.kpiShiftName')}
+              {activeShift ? 'Syif Terbuka' : 'Syif Tertutup'}
             </p>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            {activeShift && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />}
           </div>
           <div className="flex items-center justify-between mt-2">
             <span className="text-[11px] text-slate-500">
-              {t('dashboard.page.kpiShiftDrawer')}
+              {activeShift ? `Kas: Rp ${(activeShift.startCash || 0).toLocaleString('id-ID')}` : 'Buka di POS'}
             </span>
-            <button
-              onClick={handleCloseShift}
-              className="text-[10px] font-bold text-rose-600 hover:text-rose-700 underline underline-offset-2"
+            <Link
+              href="/dashboard/pos"
+              className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-2"
             >
-              {t('dashboard.page.kpiShiftCloseBtn')}
-            </button>
+              Kelola di POS
+            </Link>
           </div>
         </div>
 
@@ -256,10 +240,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <p className="text-2xl font-black text-slate-900 tracking-tight">
-            {t('dashboard.page.kpiStockValue')}
+            {lowStockCount} Item
           </p>
           <p className="text-[11px] font-medium text-slate-500 mt-2 truncate">
-            {t('dashboard.page.kpiStockDesc')}
+            {lowStockCount > 0 ? 'Perlu pengadaan / restock' : 'Semua stok aman'}
           </p>
         </div>
       </div>
@@ -320,110 +304,125 @@ export default function DashboardPage() {
 
         {/* Senarai Jadual Responsive */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200/50 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                <th className="py-3 px-3">{t('dashboard.page.thOrderNo')}</th>
-                <th className="py-3 px-3">{t('dashboard.page.thCustomer')}</th>
-                <th className="py-3 px-3">{t('dashboard.page.thItems')}</th>
-                <th className="py-3 px-3">{t('dashboard.page.thMethod')}</th>
-                <th className="py-3 px-3">{t('dashboard.page.thStatus')}</th>
-                <th className="py-3 px-3 text-right">{t('dashboard.page.thTotal')}</th>
-                <th className="py-3 px-3 text-center">{t('dashboard.page.thAction')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredTransactions.map((trx) => {
-                const MethodIcon = trx.methodIcon;
-                const formattedMethod =
-                  trx.method === 'Tunai'
-                    ? language === 'id'
-                      ? 'Tunai'
-                      : 'Cash'
-                    : trx.method;
+          {filteredOrders.length === 0 ? (
+            <div className="py-16 text-center space-y-2">
+              <p className="text-sm font-bold text-slate-800">Belum ada transaksi penjualan terbaru</p>
+              <p className="text-xs text-slate-500">
+                Buka terminal kasir di POS untuk memulai transaksi pertama Anda hari ini.
+              </p>
+              <Link
+                href="/dashboard/pos"
+                className="inline-flex items-center gap-1.5 px-4 py-2 mt-2 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-xs"
+              >
+                <Store className="w-3.5 h-3.5" />
+                <span>Buka Terminal POS</span>
+              </Link>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200/50 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <th className="py-3 px-3">{t('dashboard.page.thOrderNo')}</th>
+                  <th className="py-3 px-3">{t('dashboard.page.thCustomer')}</th>
+                  <th className="py-3 px-3">{t('dashboard.page.thItems')}</th>
+                  <th className="py-3 px-3">{t('dashboard.page.thMethod')}</th>
+                  <th className="py-3 px-3">{t('dashboard.page.thStatus')}</th>
+                  <th className="py-3 px-3 text-right">{t('dashboard.page.thTotal')}</th>
+                  <th className="py-3 px-3 text-center">{t('dashboard.page.thAction')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredOrders.map((ord) => {
+                  const MethodIcon = getMethodIcon(ord.paymentMethod);
+                  const itemsSummary =
+                    ord.items?.map((it) => `${it.quantity}x ${it.productName}`).join(', ') ||
+                    `${ord.items?.length || 0} item`;
 
-                return (
-                  <tr
-                    key={trx.id}
-                    className="hover:bg-white/90 transition-colors group"
-                  >
-                    {/* ID */}
-                    <td className="py-3.5 px-3 font-mono font-bold text-slate-800">
-                      #{trx.id}
-                    </td>
+                  return (
+                    <tr
+                      key={ord.id}
+                      className="hover:bg-white/90 transition-colors group"
+                    >
+                      {/* ID */}
+                      <td className="py-3.5 px-3 font-mono font-bold text-slate-800">
+                        {ord.orderNumber}
+                      </td>
 
-                    {/* Masa & Pelanggan */}
-                    <td className="py-3.5 px-3">
-                      <p className="font-semibold text-slate-800">{trx.customer}</p>
-                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">{trx.time}</p>
-                    </td>
+                      {/* Masa & Pelanggan */}
+                      <td className="py-3.5 px-3">
+                        <p className="font-semibold text-slate-800">
+                          {ord.customerName || (ord.tableNumber ? `Meja ${ord.tableNumber}` : 'Pelanggan Umum')}
+                        </p>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          {new Date(ord.createdAt).toLocaleTimeString('id-ID', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </td>
 
-                    {/* Ringkasan Item */}
-                    <td className="py-3.5 px-3 max-w-50 truncate text-slate-600">
-                      {trx.items}
-                    </td>
+                      {/* Ringkasan Item */}
+                      <td className="py-3.5 px-3 max-w-56 truncate text-slate-600">
+                        {itemsSummary}
+                      </td>
 
-                    {/* Kaedah Bayaran */}
-                    <td className="py-3.5 px-3">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 border border-slate-200/60 text-[11px] font-semibold text-slate-700">
-                        <MethodIcon className="w-3.5 h-3.5 text-amber-600" />
-                        <span>{formattedMethod}</span>
-                      </div>
-                    </td>
+                      {/* Kaedah Bayaran */}
+                      <td className="py-3.5 px-3">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 border border-slate-200/60 text-[11px] font-semibold text-slate-700">
+                          <MethodIcon className="w-3.5 h-3.5 text-amber-600" />
+                          <span>{ord.paymentMethod}</span>
+                        </div>
+                      </td>
 
-                    {/* Status Bayaran */}
-                    <td className="py-3.5 px-3">
-                      {trx.status === 'COMPLETED' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>{t('dashboard.page.statusCompleted')}</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold">
-                          <Hourglass className="w-3 h-3 animate-spin" />
-                          <span>{t('dashboard.page.statusProcessing')}</span>
-                        </span>
-                      )}
-                    </td>
+                      {/* Status Bayaran */}
+                      <td className="py-3.5 px-3">
+                        {ord.status === 'COMPLETED' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>{t('dashboard.page.statusCompleted')}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold">
+                            <Hourglass className="w-3 h-3 animate-spin" />
+                            <span>{t('dashboard.page.statusProcessing')}</span>
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Jumlah Nilai */}
-                    <td className="py-3.5 px-3 text-right font-extrabold text-slate-900">
-                      Rp {trx.amount.toLocaleString('id-ID')}
-                    </td>
+                      {/* Jumlah Nilai */}
+                      <td className="py-3.5 px-3 text-right font-extrabold text-slate-900">
+                        Rp {(ord.totalAmount || 0).toLocaleString('id-ID')}
+                      </td>
 
-                    {/* Butang Tindakan Cetak Struk */}
-                    <td className="py-3.5 px-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handlePrintReceipt(trx.id)}
-                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all shadow-2xs"
-                        title={t('dashboard.page.printReceiptTitle')}
-                      >
-                        <Printer className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {/* Butang Tindakan Cetak Struk */}
+                      <td className="py-3.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handlePrintReceipt(ord.orderNumber)}
+                          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all shadow-2xs cursor-pointer"
+                          title={t('dashboard.page.printReceiptTitle')}
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Kaki Jadual */}
         <div className="pt-3 border-t border-slate-200/50 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
           <span>{t('dashboard.page.tableFooter')}</span>
-          <button
-            type="button"
-            onClick={() =>
-              toast(t('dashboard.page.viewAllNotice'), {
-                icon: '📋',
-              })
-            }
+          <Link
+            href="/dashboard/reports"
             className="font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
           >
             <span>{t('dashboard.page.viewAllBtn')}</span>
             <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          </Link>
         </div>
       </div>
     </div>

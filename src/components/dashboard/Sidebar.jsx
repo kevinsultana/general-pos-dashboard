@@ -19,6 +19,8 @@ import {
   ArrowRight,
   Shield,
   Smartphone,
+  TrendingUp,
+  Wallet,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -66,6 +68,13 @@ export default function Sidebar({ onCloseMobile }) {
       '/dashboard/settings',
       '/dashboard/users',
       '/dashboard/branches',
+      '/dashboard/products',
+      '/dashboard/pos',
+      '/dashboard/inventory',
+      '/dashboard/inventory/transfers',
+      '/dashboard/customers',
+      '/dashboard/expenses',
+      '/dashboard/reports',
     ];
 
     if (!activeRoutes.includes(href)) {
@@ -124,6 +133,16 @@ export default function Sidebar({ onCloseMobile }) {
           isLocked: true,
           minPlan: 'PLUS',
           permission: 'reports:view',
+        },
+        {
+          name: t('customers.customersTitle') || 'Pelanggan & Kasbon',
+          href: '/dashboard/upgrade',
+          icon: Users,
+          badge: 'PLUS',
+          badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+          isLocked: true,
+          minPlan: 'PLUS',
+          permission: 'pos:access',
         },
         {
           name: t('dashboard.sidebar.items.shifts'),
@@ -196,20 +215,28 @@ export default function Sidebar({ onCloseMobile }) {
       group: t('dashboard.sidebar.groups.operations'),
       items: [
         {
-          name: t('dashboard.sidebar.items.transactions'),
-          href: '/dashboard/transactions',
-          icon: Receipt,
+          name: t('customers.customersTitle') || 'Pelanggan & Kasbon',
+          href: '/dashboard/customers',
+          icon: Users,
+          badge: null,
+          isLocked: false,
+          permission: 'pos:access',
+        },
+        {
+          name: t('reports.reportsTitle') || 'Laporan & Analitik',
+          href: '/dashboard/reports',
+          icon: TrendingUp,
           badge: null,
           isLocked: false,
           permission: 'reports:view',
         },
         {
-          name: t('dashboard.sidebar.items.shifts'),
-          href: '/dashboard/shifts',
-          icon: Clock,
+          name: t('expenses.expensesTitle') || 'Biaya Operasional',
+          href: '/dashboard/expenses',
+          icon: Wallet,
           badge: null,
           isLocked: false,
-          permission: 'pos:shift',
+          permission: 'reports:view',
         },
       ],
     },
@@ -217,7 +244,7 @@ export default function Sidebar({ onCloseMobile }) {
       group: t('dashboard.sidebar.groups.inventory'),
       items: [
         {
-          name: t('dashboard.sidebar.items.products'),
+          name: t('products.productsTitle') || 'Produk & Menu',
           href: '/dashboard/products',
           icon: Package,
           badge: null,
@@ -225,8 +252,8 @@ export default function Sidebar({ onCloseMobile }) {
           permission: 'inventory:view',
         },
         {
-          name: t('dashboard.sidebar.items.categories'),
-          href: '/dashboard/categories',
+          name: t('inventory.inventoryTitle') || 'Pengadaan & Opname',
+          href: '/dashboard/inventory',
           icon: Layers,
           badge: null,
           isLocked: false,
