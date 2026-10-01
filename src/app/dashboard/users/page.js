@@ -29,17 +29,63 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import api from "../../../lib/api";
 import { showConfirmDialog, showAlertNotice } from "../../../lib/alerts";
+import UnauthorizedState from "../../../components/common/UnauthorizedState";
 
-// Pengelompokan daftar permission RBAC
-const PERMISSION_GROUPS = [
+// Master daftar permission RBAC terstandarisasi (8 kategori)
+const DEFAULT_PERMISSION_GROUPS = [
+  {
+    id: "settings",
+    name: "Pengaturan Toko",
+    description: "Pengaturan profil toko, domain, dan konfigurasi umum",
+    permissions: [
+      { key: "settings:view", label: "Lihat Informasi Toko", desc: "Melihat informasi identitas dan profil toko" },
+      { key: "settings:manage", label: "Ubah Pengaturan Toko", desc: "Mengubah nama dan konfigurasi umum toko" },
+    ],
+  },
+  {
+    id: "branches",
+    name: "Manajemen Cabang",
+    description: "Daftar dan operasional outlet cabang toko",
+    permissions: [
+      { key: "branches:view", label: "Lihat Daftar Cabang", desc: "Melihat daftar seluruh outlet cabang toko" },
+      { key: "branches:manage", label: "Kelola Outlet Cabang", desc: "Menambah, mengedit, dan menonaktifkan cabang" },
+    ],
+  },
+  {
+    id: "subscriptions",
+    name: "Langganan & Paket",
+    description: "Status paket langganan dan transaksi pembayaran",
+    permissions: [
+      { key: "subscriptions:view", label: "Lihat Status Langganan", desc: "Melihat status paket langganan dan tagihan toko" },
+      { key: "subscriptions:manage", label: "Beli / Upgrade Paket", desc: "Melakukan transaksi pembayaran dan upgrade paket" },
+    ],
+  },
+  {
+    id: "roles",
+    name: "Hak Akses & Peran (RBAC)",
+    description: "Administrasi peran dan checklist hak akses",
+    permissions: [
+      { key: "roles:view", label: "Lihat Daftar Peran", desc: "Melihat daftar peran karyawan dan rincian izin" },
+      { key: "roles:manage", label: "Kelola Peran & Hak Akses", desc: "Membuat, mengubah, dan menghapus peran kustom" },
+    ],
+  },
+  {
+    id: "users",
+    name: "Manajemen Karyawan",
+    description: "Pengelolaan akun staf kasir dan supervisor",
+    permissions: [
+      { key: "users:view", label: "Lihat Daftar Karyawan", desc: "Melihat daftar akun staf dan penugasan cabang" },
+      { key: "users:manage", label: "Kelola Karyawan", desc: "Menambah, mengedit, atau menghapus akun staf" },
+    ],
+  },
   {
     id: "pos",
     name: "Terminal Kasir POS",
     description: "Operasional penjualan, transaksi, dan shift kasir",
     permissions: [
-      { key: "pos:access", label: "Akses Kasir", desc: "Membuka terminal kasir dan melayani transaksi" },
-      { key: "pos:void", label: "Izin Void", desc: "Membatalkan item pesanan yang sudah tercatat" },
-      { key: "pos:shift", label: "Kelola Shift", desc: "Buka dan tutup shift kasir serta audit laci kas" },
+      { key: "pos:access", label: "Akses Terminal Kasir", desc: "Membuka terminal kasir dan melayani transaksi" },
+      { key: "pos:shift", label: "Buka & Tutup Shift Kasir", desc: "Buka dan tutup shift kasir serta audit laci kas" },
+      { key: "pos:void", label: "Void / Batalkan Transaksi", desc: "Membatalkan item pesanan yang sudah tercatat" },
     ],
   },
   {
@@ -47,8 +93,8 @@ const PERMISSION_GROUPS = [
     name: "Inventori Produk",
     description: "Katalog produk, manajemen stok, dan opname",
     permissions: [
-      { key: "inventory:view", label: "Lihat Produk", desc: "Melihat daftar produk, harga, dan sisa stok" },
-      { key: "inventory:manage", label: "Kelola Stok", desc: "Menambah, mengubah produk, dan penyesuaian stok" },
+      { key: "inventory:view", label: "Lihat Stok & Produk", desc: "Melihat daftar produk, harga, dan sisa stok" },
+      { key: "inventory:manage", label: "Kelola Stok & Produk", desc: "Menambah, mengubah produk, dan penyesuaian stok" },
     ],
   },
   {
@@ -56,34 +102,50 @@ const PERMISSION_GROUPS = [
     name: "Keuangan & Laporan",
     description: "Analitik penjualan, omzet harian, dan pembukuan",
     permissions: [
-      { key: "reports:view", label: "Lihat Laporan", desc: "Melihat grafik penjualan dan analitik pendapatan" },
-      { key: "reports:export", label: "Ekspor Laporan", desc: "Mengunduh file laporan ke format Excel / PDF" },
-    ],
-  },
-  {
-    id: "users",
-    name: "Kelola Karyawan & Akses",
-    description: "Administrasi akun staf dan hak akses (RBAC)",
-    permissions: [
-      { key: "users:view", label: "Lihat Karyawan", desc: "Melihat daftar akun staf dan peran toko" },
-      { key: "users:manage", label: "Kelola Karyawan", desc: "Menambah, mengedit, atau menghapus akun staf & peran" },
+      { key: "reports:view", label: "Lihat Laporan Penjualan", desc: "Melihat grafik penjualan dan analitik pendapatan" },
+      { key: "reports:export", label: "Ekspor Data Laporan", desc: "Mengunduh file laporan ke format Excel / PDF" },
     ],
   },
 ];
 
 export default function UsersManagementPage() {
-  const { tenant, user: currentUser } = useAuth();
+  const { tenant, user: currentUser, hasPermission } = useAuth();
   const { t, language } = useLanguage();
 
   const isFreePlan = tenant?.plan === "FREE";
   const isProPlan = tenant?.plan === "PRO";
 
-  const [activeTab, setActiveTab] = useState("staff"); // "staff" | "roles"
+  // Evaluasi Hak Akses Granular
+  const canViewUsers = Boolean(currentUser?.isOwner || hasPermission("users:view"));
+  const canViewRoles = Boolean(currentUser?.isOwner || hasPermission("roles:view"));
+  const canManageUsers = Boolean(currentUser?.isOwner || hasPermission("users:manage"));
+  const canManageRoles = Boolean(currentUser?.isOwner || hasPermission("roles:manage"));
+
+  const isAllowed = canViewUsers || canViewRoles;
+
+  useEffect(() => {
+    if (!isAllowed && !isFreePlan && currentUser) {
+      toast.error(
+        t("common.accessDeniedToast") ||
+          "Akses Ditolak: Anda tidak memiliki izin untuk fitur ini."
+      );
+    }
+  }, [isAllowed, isFreePlan, currentUser, t]);
+
+  const [activeTab, setActiveTab] = useState(canViewUsers ? "staff" : "roles"); // "staff" | "roles"
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [permissionGroups, setPermissionGroups] = useState(DEFAULT_PERMISSION_GROUPS);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Sinkronkan tab jika izin role tidak dimiliki
+  useEffect(() => {
+    if (!canViewRoles && activeTab === "roles") {
+      setActiveTab("staff");
+    }
+  }, [canViewRoles, activeTab]);
 
   // Modal State - User
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -110,7 +172,7 @@ export default function UsersManagementPage() {
   });
   const [isSubmittingRole, setIsSubmittingRole] = useState(false);
 
-  // Muat data awal pengguna, peran, dan cabang
+  // Muat data awal pengguna, peran, cabang, dan master permissions
   const fetchData = async () => {
     if (isFreePlan) {
       setIsLoading(false);
@@ -119,15 +181,23 @@ export default function UsersManagementPage() {
 
     try {
       setIsLoading(true);
-      const [usersRes, rolesRes, branchesRes] = await Promise.all([
-        api.get("/users").catch(() => ({ success: false, data: [] })),
-        api.get("/roles").catch(() => ({ success: false, data: [] })),
+      const [usersRes, rolesRes, branchesRes, permsRes] = await Promise.all([
+        canViewUsers
+          ? api.get("/users").catch(() => ({ success: false, data: [] }))
+          : Promise.resolve({ success: true, data: [] }),
+        canViewRoles
+          ? api.get("/roles").catch(() => ({ success: false, data: [] }))
+          : Promise.resolve({ success: true, data: [] }),
         api.get("/branches").catch(() => ({ success: false, data: [] })),
+        api.get("/roles/permissions").catch(() => ({ success: false, data: null })),
       ]);
 
       if (usersRes?.success) setUsers(usersRes.data || []);
       if (rolesRes?.success) setRoles(rolesRes.data || []);
       if (branchesRes?.success) setBranches(branchesRes.data || []);
+      if (permsRes?.success && permsRes.data?.grouped && permsRes.data.grouped.length > 0) {
+        setPermissionGroups(permsRes.data.grouped);
+      }
     } catch (err) {
       console.error("Gagal memuat data staf & peran:", err);
       toast.error(err.message || "Gagal memuat data karyawan & peran.");
@@ -138,7 +208,7 @@ export default function UsersManagementPage() {
 
   useEffect(() => {
     fetchData();
-  }, [isFreePlan]);
+  }, [isFreePlan, canViewUsers, canViewRoles]);
 
   // Filter daftar staf berdasarkan pencarian
   const filteredUsers = useMemo(() => {
@@ -374,6 +444,54 @@ export default function UsersManagementPage() {
     });
   };
 
+  // Pilih semua permission dalam 1 kategori
+  const handleSelectAllInGroup = (groupId) => {
+    const group = permissionGroups.find((g) => g.id === groupId);
+    if (!group) return;
+    const groupKeys = group.permissions.map((p) => p.key);
+    setRoleFormData((prev) => {
+      const merged = Array.from(new Set([...prev.permissions, ...groupKeys]));
+      return { ...prev, permissions: merged };
+    });
+  };
+
+  // Hapus semua permission dalam 1 kategori
+  const handleClearAllInGroup = (groupId) => {
+    const group = permissionGroups.find((g) => g.id === groupId);
+    if (!group) return;
+    const groupKeys = new Set(group.permissions.map((p) => p.key));
+    setRoleFormData((prev) => ({
+      ...prev,
+      permissions: prev.permissions.filter(
+        (k) => !groupKeys.has(k) && k !== `${groupId}:*` && k !== "*"
+      ),
+    }));
+  };
+
+  // Helper judul grup izin dari kamus bahasa
+  const getGroupTitle = (groupId, fallback) => {
+    switch (groupId) {
+      case "settings":
+        return t("usersManagement.groupSettings") || "Pengaturan Toko";
+      case "branches":
+        return t("usersManagement.groupBranches") || "Manajemen Cabang";
+      case "subscriptions":
+        return t("usersManagement.groupSubscriptions") || "Langganan & Upgrade";
+      case "roles":
+        return t("usersManagement.groupRoles") || "Hak Akses & Peran (RBAC)";
+      case "users":
+        return t("usersManagement.groupUsers") || "Manajemen Karyawan";
+      case "pos":
+        return t("usersManagement.groupPos") || "Terminal Kasir & POS";
+      case "inventory":
+        return t("usersManagement.groupInventory") || "Inventori & Produk";
+      case "reports":
+        return t("usersManagement.groupReports") || "Laporan & Transaksi";
+      default:
+        return fallback;
+    }
+  };
+
   // Submit form simpan peran
   const handleSaveRole = async (e) => {
     e?.preventDefault();
@@ -480,6 +598,11 @@ export default function UsersManagementPage() {
     }
   };
 
+  // Proteksi Hak Akses (RBAC Guard)
+  if (!isFreePlan && !isAllowed && currentUser) {
+    return <UnauthorizedState requiredPermission="users:view" />;
+  }
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16 animate-in fade-in duration-300">
       {/* 1. Header Section */}
@@ -503,7 +626,7 @@ export default function UsersManagementPage() {
         {/* Action Button: Tambah Staf / Peran */}
         {!isFreePlan && (
           <div className="flex items-center gap-3">
-            {activeTab === "staff" ? (
+            {activeTab === "staff" && canManageUsers && (
               <button
                 type="button"
                 onClick={handleOpenAddUser}
@@ -512,7 +635,8 @@ export default function UsersManagementPage() {
                 <Plus className="w-4 h-4 text-amber-400" />
                 <span>{t("usersManagement.addUserBtn") || "Tambah Karyawan"}</span>
               </button>
-            ) : (
+            )}
+            {activeTab === "roles" && canManageRoles && (
               <button
                 type="button"
                 onClick={handleOpenAddRole}
@@ -561,37 +685,41 @@ export default function UsersManagementPage() {
         <>
           {/* 3. Navigation Tabs */}
           <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-200/50 backdrop-blur-xl border border-white/60 w-fit">
-            <button
-              type="button"
-              onClick={() => setActiveTab("staff")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeTab === "staff"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>{t("usersManagement.staffTab") || "Daftar Karyawan"}</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] text-slate-600 font-bold">
-                {users.length}
-              </span>
-            </button>
+            {canViewUsers && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("staff")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  activeTab === "staff"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>{t("usersManagement.staffTab") || "Daftar Karyawan"}</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] text-slate-600 font-bold">
+                  {users.length}
+                </span>
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("roles")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                activeTab === "roles"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>{t("usersManagement.rolesTab") || "Kelola Peran (Roles)"}</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] text-slate-600 font-bold">
-                {roles.length}
-              </span>
-            </button>
+            {canViewRoles && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("roles")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  activeTab === "roles"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>{t("usersManagement.rolesTab") || "Kelola Peran (Roles)"}</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] text-slate-600 font-bold">
+                  {roles.length}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* 4. Tab Content: Daftar Karyawan */}
@@ -716,9 +844,9 @@ export default function UsersManagementPage() {
                               <button
                                 type="button"
                                 onClick={() => handleToggleUserStatus(item)}
-                                disabled={item.isOwner}
+                                disabled={item.isOwner || !canManageUsers}
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border transition-all ${
-                                  item.isOwner
+                                  item.isOwner || !canManageUsers
                                     ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed opacity-80"
                                     : item.isActive
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer"
@@ -736,26 +864,30 @@ export default function UsersManagementPage() {
 
                             {/* Tombol Aksi */}
                             <td className="py-4 px-6 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEditUser(item)}
-                                  title="Edit Karyawan"
-                                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-                                {!item.isOwner && (
+                              {canManageUsers ? (
+                                <div className="flex items-center justify-end gap-1.5">
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteUser(item)}
-                                    title="Hapus Karyawan"
-                                    className="p-1.5 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                    onClick={() => handleOpenEditUser(item)}
+                                    title="Edit Karyawan"
+                                    className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                )}
-                              </div>
+                                  {!item.isOwner && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteUser(item)}
+                                      title="Hapus Karyawan"
+                                      className="p-1.5 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-xs italic">-</span>
+                              )}
                             </td>
                           </tr>
                         ))
@@ -811,26 +943,28 @@ export default function UsersManagementPage() {
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditRole(roleItem)}
-                              title="Edit Hak Akses Peran"
-                              className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            {!roleItem.isSystem && (
+                          {canManageRoles && (
+                            <div className="flex items-center gap-1 shrink-0">
                               <button
                                 type="button"
-                                onClick={() => handleDeleteRole(roleItem)}
-                                title="Hapus Peran Kustom"
-                                className="p-1.5 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                onClick={() => handleOpenEditRole(roleItem)}
+                                title="Edit Hak Akses Peran"
+                                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
-                          </div>
+                              {!roleItem.isSystem && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteRole(roleItem)}
+                                  title="Hapus Peran Kustom"
+                                  className="p-1.5 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Jumlah User */}
@@ -1185,48 +1319,102 @@ export default function UsersManagementPage() {
                 </div>
 
                 <div className="space-y-3.5">
-                  {PERMISSION_GROUPS.map((group) => (
-                    <div
-                      key={group.id}
-                      className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-2.5"
-                    >
-                      <div className="leading-tight">
-                        <p className="text-xs font-extrabold text-slate-900">{group.name}</p>
-                        <p className="text-[10px] text-slate-500 font-normal">{group.description}</p>
-                      </div>
+                  {permissionGroups.map((group) => {
+                    const groupKeys = group.permissions.map((p) => p.key);
+                    const selectedCount = groupKeys.filter(
+                      (k) =>
+                        roleFormData.permissions.includes(k) ||
+                        roleFormData.permissions.includes("*") ||
+                        roleFormData.permissions.includes(`${group.id}:*`)
+                    ).length;
+                    const isAllSelected =
+                      groupKeys.length > 0 && selectedCount === groupKeys.length;
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                        {group.permissions.map((perm) => {
-                          const isChecked =
-                            roleFormData.permissions.includes(perm.key) ||
-                            roleFormData.permissions.includes("*") ||
-                            roleFormData.permissions.includes(`${group.id}:*`);
+                    return (
+                      <div
+                        key={group.id}
+                        className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-xs space-y-3 transition-all hover:border-slate-300"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-black text-slate-900">
+                                {getGroupTitle(group.id, group.name)}
+                              </p>
+                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 border border-slate-200">
+                                {selectedCount}/{group.permissions.length}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-normal mt-0.5">
+                              {group.description}
+                            </p>
+                          </div>
 
-                          return (
-                            <label
-                              key={perm.key}
-                              className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                                isChecked
-                                  ? "bg-amber-50/90 border-amber-300 text-slate-900 shadow-2xs"
-                                  : "bg-white border-slate-200/80 text-slate-600 hover:bg-slate-50"
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectAllInGroup(group.id)}
+                              disabled={isAllSelected}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                                isAllSelected
+                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                  : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 border border-amber-300/60 cursor-pointer active:scale-95"
                               }`}
                             >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => handleTogglePermission(perm.key)}
-                                className="mt-0.5 rounded text-amber-500 focus:ring-amber-400"
-                              />
-                              <div className="leading-tight">
-                                <p className="font-bold text-[11px] text-slate-900">{perm.label}</p>
-                                <p className="text-[10px] text-slate-500 font-normal mt-0.5">{perm.desc}</p>
-                              </div>
-                            </label>
-                          );
-                        })}
+                              {t("usersManagement.selectAll") || "Pilih Semua"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleClearAllInGroup(group.id)}
+                              disabled={selectedCount === 0}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                                selectedCount === 0
+                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                  : "bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 cursor-pointer active:scale-95"
+                              }`}
+                            >
+                              {t("usersManagement.clearAll") || "Hapus Semua"}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+                          {group.permissions.map((perm) => {
+                            const isChecked =
+                              roleFormData.permissions.includes(perm.key) ||
+                              roleFormData.permissions.includes("*") ||
+                              roleFormData.permissions.includes(`${group.id}:*`);
+
+                            return (
+                              <label
+                                key={perm.key}
+                                className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                                  isChecked
+                                    ? "bg-amber-50/90 border-amber-300 text-slate-900 shadow-2xs ring-1 ring-amber-300/40"
+                                    : "bg-white/90 border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleTogglePermission(perm.key)}
+                                  className="mt-0.5 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
+                                />
+                                <div className="leading-tight select-none">
+                                  <p className="font-bold text-[11px] text-slate-900">
+                                    {perm.label}
+                                  </p>
+                                  <p className="text-[10px] text-slate-500 font-normal mt-0.5 leading-snug">
+                                    {perm.desc}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

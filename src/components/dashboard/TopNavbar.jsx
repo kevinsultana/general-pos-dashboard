@@ -1,17 +1,110 @@
 "use client";
 
-import { Menu, Store, Sparkles, LogOut, Bell, RefreshCw } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import {
+  Menu,
+  Store,
+  Sparkles,
+  LogOut,
+  Bell,
+  RefreshCw,
+  ChevronDown,
+  Check,
+  GitBranch,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import LanguageSwitcher from "../common/LanguageSwitcher";
 import { confirmLogout } from "../../lib/alerts";
+import api from "../../lib/api";
 
 export default function TopNavbar({ onToggleMobile }) {
   const router = useRouter();
-  const { user, tenant, logout } = useAuth();
+  const {
+    user,
+    tenant,
+    logout,
+    activeBranchId,
+    activeBranch,
+    branches,
+    switchBranch,
+    hasPermission,
+  } = useAuth();
   const { t } = useLanguage();
+
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [branchList, setBranchList] = useState([]);
+  const branchDropdownRef = useRef(null);
+
+  // Ambil daftar cabang terkini jika user memiliki hak akses atau owner
+  const canViewBranches = user?.isOwner || hasPermission("branches:view");
+
+  useEffect(() => {
+    if (branches && branches.length > 0) {
+      setBranchList(branches);
+    }
+  }, [branches]);
+
+  // Muat ulang daftar cabang dari API jika dibuka untuk memastikan data terupdate
+  const handleOpenDropdown = async () => {
+    setIsBranchDropdownOpen((prev) => !prev);
+    if (!isBranchDropdownOpen && canViewBranches) {
+      try {
+        const res = await api.get("/branches");
+        if (res?.success && Array.isArray(res.data)) {
+          setBranchList(res.data);
+        }
+      } catch (err) {
+        // Fallback memakai branches dari context
+      }
+    }
+  };
+
+  // Close dropdown saat klik di luar
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        branchDropdownRef.current &&
+        !branchDropdownRef.current.contains(e.target)
+      ) {
+        setIsBranchDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Eksekusi ganti cabang aktif
+  const handleSelectBranch = async (branchItem) => {
+    if (branchItem.id === (activeBranchId || activeBranch?.id)) {
+      setIsBranchDropdownOpen(false);
+      return;
+    }
+
+    try {
+      setIsSwitching(true);
+      await switchBranch(branchItem.id);
+      toast.success(
+        t("branches.switchBranchSuccess", { branchName: branchItem.name }) ||
+          `Berhasil beralih ke ${branchItem.name}`
+      );
+      setIsBranchDropdownOpen(false);
+    } catch (err) {
+      toast.error(err.message || "Gagal berpindah cabang.");
+    } finally {
+      setIsSwitching(false);
+    }
+  };
+
+  const currentBranchName =
+    activeBranch?.name ||
+    branchList.find((b) => b.id === activeBranchId)?.name ||
+    t("dashboard.mainBranch") ||
+    "Cabang Utama";
 
   const handleLogout = async () => {
     const result = await confirmLogout({
@@ -66,7 +159,7 @@ export default function TopNavbar({ onToggleMobile }) {
   return (
     <header className="sticky top-4 z-30 w-full mb-6">
       <div className="bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/70 rounded-2xl sm:rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between transition-all">
-        {/* Left Side: Mobile Hamburger & Branch Info */}
+        {/* Left Side: Mobile Hamburger & Branch Switcher Dropdown */}
         <div className="flex items-center gap-3">
           {/* Mobile Toggle Button */}
           <button
@@ -78,11 +171,121 @@ export default function TopNavbar({ onToggleMobile }) {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Active Branch Pill */}
+          {/* Active Branch Switcher Capsule */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100/80 border border-slate-200/70 text-xs font-semibold text-slate-800 shadow-2xs">
-              <Store className="w-3.5 h-3.5 text-amber-600" />
-              <span>{t("dashboard.mainBranch")}</span>
+            <div className="relative" ref={branchDropdownRef}>
+              <button
+                type="button"
+                onClick={handleOpenDropdown}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/80 hover:bg-slate-200/80 border border-slate-200/70 text-xs font-bold text-slate-800 shadow-2xs transition-all active:scale-98 cursor-pointer group"
+                title="Ganti Cabang Aktif"
+              >
+                <div className="w-5 h-5 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-700">
+                  <Store className="w-3 h-3 text-amber-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <span className="truncate max-w-28 sm:max-w-40 font-extrabold text-slate-900">
+                  {currentBranchName}
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-emerald-100 text-[10px] font-black text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{t("branches.activeBranchBadge") || "Aktif"}</span>
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 transition-transform duration-200 ${
+                    isBranchDropdownOpen ? "rotate-180 text-slate-900" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Dropdown Menu Cabang */}
+              {isBranchDropdownOpen && (
+                <div className="absolute left-0 mt-2 w-64 sm:w-72 rounded-2xl bg-white/95 backdrop-blur-2xl border border-white/90 shadow-[0_12px_40px_0_rgba(31,38,135,0.12)] ring-1 ring-inset ring-white/80 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1">
+                  <div className="px-3 py-2 flex items-center justify-between border-b border-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                      {t("branches.allBranches") || "Pilih Cabang Aktif"}
+                    </p>
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+                      {branchList.length} Cabang
+                    </span>
+                  </div>
+
+                  <div className="max-h-56 overflow-y-auto space-y-0.5 custom-scrollbar p-0.5">
+                    {branchList.length === 0 ? (
+                      <div className="p-3 text-center text-xs text-slate-500">
+                        Memuat data cabang...
+                      </div>
+                    ) : (
+                      branchList.map((branchItem) => {
+                        const isActive =
+                          branchItem.id === (activeBranchId || activeBranch?.id);
+
+                        return (
+                          <button
+                            key={branchItem.id}
+                            type="button"
+                            onClick={() => handleSelectBranch(branchItem)}
+                            disabled={isSwitching || isActive}
+                            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                              isActive
+                                ? "bg-amber-500/10 text-amber-950 font-black border border-amber-300/70 shadow-2xs"
+                                : "text-slate-700 hover:bg-slate-100/80 font-medium"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 truncate">
+                              <div
+                                className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+                                  isActive
+                                    ? "bg-amber-500 text-white shadow-xs"
+                                    : "bg-slate-100 text-slate-500"
+                                }`}
+                              >
+                                <Store className="w-3.5 h-3.5" />
+                              </div>
+                              <div className="truncate leading-tight">
+                                <p className="truncate text-xs font-bold text-slate-900">
+                                  {branchItem.name}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  {branchItem.isMain && (
+                                    <span className="text-[9px] font-black text-amber-700 uppercase tracking-wider">
+                                      {t("branches.mainBranchBadge") || "Utama"}
+                                    </span>
+                                  )}
+                                  {branchItem.address && (
+                                    <span className="text-[10px] text-slate-400 truncate max-w-28">
+                                      {branchItem.address}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {isActive && (
+                              <Check className="w-4 h-4 text-amber-600 shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Link ke Halaman Kelola Cabang */}
+                  {canViewBranches && (
+                    <div className="pt-1.5 border-t border-slate-100">
+                      <Link
+                        href="/dashboard/branches"
+                        onClick={() => setIsBranchDropdownOpen(false)}
+                        className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 text-[11px] font-extrabold text-slate-800 transition-colors"
+                      >
+                        <GitBranch className="w-3.5 h-3.5 text-purple-600" />
+                        <span>
+                          {t("branches.branchesTitle") || "Kelola Semua Cabang"}
+                        </span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Plan Badge Pill */}

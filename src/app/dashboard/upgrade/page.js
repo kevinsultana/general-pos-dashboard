@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import {
@@ -18,11 +18,24 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import api from "../../../lib/api";
 import { showAlertNotice } from "../../../lib/alerts";
+import UnauthorizedState from "../../../components/common/UnauthorizedState";
 
 export default function UpgradePage() {
   const router = useRouter();
-  const { tenant, checkAuth } = useAuth();
+  const { tenant, user, checkAuth, hasPermission } = useAuth();
   const { t } = useLanguage();
+
+  const isAllowed = user?.isOwner || hasPermission("subscriptions:view");
+  const canManage = user?.isOwner || hasPermission("subscriptions:manage");
+
+  useEffect(() => {
+    if (!isAllowed && user) {
+      toast.error(
+        t("common.accessDeniedToast") ||
+          "Akses Ditolak: Anda tidak memiliki izin untuk fitur ini."
+      );
+    }
+  }, [isAllowed, user, t]);
 
   const [billingCycle, setBillingCycle] = useState("yearly"); // 'monthly' | 'yearly'
   const [loadingPlan, setLoadingPlan] = useState(null); // 'PLUS' | 'PRO' | null
@@ -30,6 +43,12 @@ export default function UpgradePage() {
   const isCurrentPlan = (plan) => tenant?.plan === plan;
 
   const handleUpgrade = async (targetPlan) => {
+    if (!canManage) {
+      toast.error(
+        "Akses Ditolak: Anda tidak memiliki izin untuk membeli atau upgrade paket langganan (subscriptions:manage)."
+      );
+      return;
+    }
     if (isCurrentPlan(targetPlan)) {
       toast(t("upgrade.activeNow"), { icon: "ℹ️" });
       return;
@@ -158,6 +177,10 @@ export default function UpgradePage() {
       setLoadingPlan(null);
     }
   };
+
+  if (!isAllowed && user) {
+    return <UnauthorizedState requiredPermission="subscriptions:view" />;
+  }
 
   return (
     <>

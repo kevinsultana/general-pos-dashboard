@@ -1,3 +1,6 @@
+import toast from 'react-hot-toast';
+import { showAlertNotice } from './alerts';
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 /**
@@ -66,6 +69,25 @@ async function request(endpoint, options = {}) {
     error.status = response.status;
     error.data = data;
     error.code = data?.code;
+
+    // Interceptor Global untuk Respon 403 Forbidden
+    if (response.status === 403 && typeof window !== 'undefined') {
+      if (data?.code === 'PERMISSION_DENIED') {
+        toast.error(
+          data?.message || 'Akses ditolak: Anda tidak memiliki izin untuk tindakan ini.'
+        );
+      } else if (data?.code === 'PLAN_RESTRICTED') {
+        showAlertNotice({
+          title: 'Upgrade Paket Diperlukan',
+          text:
+            data?.message ||
+            'Fitur ini memerlukan paket langganan yang lebih tinggi (PLUS / PRO). Silakan upgrade paket toko Anda.',
+          icon: 'warning',
+          confirmButtonText: 'Tutup',
+        });
+      }
+    }
+
     throw error;
   }
 

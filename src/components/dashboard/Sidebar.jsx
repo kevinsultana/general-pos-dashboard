@@ -28,7 +28,7 @@ import { confirmLogout, showAlertNotice } from '../../lib/alerts';
 export default function Sidebar({ onCloseMobile }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, tenant, logout } = useAuth();
+  const { user, tenant, logout, hasPermission } = useAuth();
   const { t } = useLanguage();
 
   const isFreePlan = tenant?.plan === 'FREE';
@@ -60,7 +60,15 @@ export default function Sidebar({ onCloseMobile }) {
   };
 
   const handlePlaceholderClick = (e, title, href) => {
-    if (href !== '/dashboard' && href !== '/dashboard/upgrade' && href !== '/dashboard/settings') {
+    const activeRoutes = [
+      '/dashboard',
+      '/dashboard/upgrade',
+      '/dashboard/settings',
+      '/dashboard/users',
+      '/dashboard/branches',
+    ];
+
+    if (!activeRoutes.includes(href)) {
       e.preventDefault();
       toast(t('dashboard.sidebar.moduleSyncNotice', { title }), {
         icon: '⚡',
@@ -81,6 +89,7 @@ export default function Sidebar({ onCloseMobile }) {
           badge: t('common.active'),
           badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           isLocked: false,
+          permission: 'settings:view',
         },
         {
           name: t('dashboard.sidebar.items.upgrade'),
@@ -89,6 +98,7 @@ export default function Sidebar({ onCloseMobile }) {
           badge: 'PRO / PLUS',
           badgeColor: 'bg-amber-100 text-amber-800 border-amber-300 font-extrabold shadow-xs',
           isLocked: false,
+          permission: 'subscriptions:view',
         },
       ],
     },
@@ -103,6 +113,7 @@ export default function Sidebar({ onCloseMobile }) {
           badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
           isLocked: true,
           minPlan: 'PLUS',
+          permission: 'pos:access',
         },
         {
           name: t('dashboard.sidebar.items.transactions'),
@@ -112,6 +123,7 @@ export default function Sidebar({ onCloseMobile }) {
           badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
           isLocked: true,
           minPlan: 'PLUS',
+          permission: 'reports:view',
         },
         {
           name: t('dashboard.sidebar.items.shifts'),
@@ -121,6 +133,7 @@ export default function Sidebar({ onCloseMobile }) {
           badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
           isLocked: true,
           minPlan: 'PLUS',
+          permission: 'pos:shift',
         },
         {
           name: t('dashboard.sidebar.items.products'),
@@ -130,6 +143,7 @@ export default function Sidebar({ onCloseMobile }) {
           badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
           isLocked: true,
           minPlan: 'PLUS',
+          permission: 'inventory:view',
         },
         {
           name: t('dashboard.sidebar.items.users'),
@@ -139,6 +153,7 @@ export default function Sidebar({ onCloseMobile }) {
           badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
           isLocked: true,
           minPlan: 'PLUS',
+          permission: ['users:view', 'roles:view'],
         },
         {
           name: t('dashboard.sidebar.items.branches'),
@@ -148,6 +163,7 @@ export default function Sidebar({ onCloseMobile }) {
           badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
           isLocked: true,
           minPlan: 'PRO',
+          permission: 'branches:view',
         },
       ],
     },
@@ -172,6 +188,7 @@ export default function Sidebar({ onCloseMobile }) {
           badge: t('dashboard.sidebar.activeBadge'),
           badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           isLocked: false,
+          permission: 'pos:access',
         },
       ],
     },
@@ -184,6 +201,7 @@ export default function Sidebar({ onCloseMobile }) {
           icon: Receipt,
           badge: null,
           isLocked: false,
+          permission: 'reports:view',
         },
         {
           name: t('dashboard.sidebar.items.shifts'),
@@ -191,6 +209,7 @@ export default function Sidebar({ onCloseMobile }) {
           icon: Clock,
           badge: null,
           isLocked: false,
+          permission: 'pos:shift',
         },
       ],
     },
@@ -203,6 +222,7 @@ export default function Sidebar({ onCloseMobile }) {
           icon: Package,
           badge: null,
           isLocked: false,
+          permission: 'inventory:view',
         },
         {
           name: t('dashboard.sidebar.items.categories'),
@@ -210,6 +230,7 @@ export default function Sidebar({ onCloseMobile }) {
           icon: Layers,
           badge: null,
           isLocked: false,
+          permission: 'inventory:view',
         },
       ],
     },
@@ -222,6 +243,7 @@ export default function Sidebar({ onCloseMobile }) {
           icon: Users,
           badge: null,
           isLocked: false,
+          permission: ['users:view', 'roles:view'],
         },
         {
           name: t('dashboard.sidebar.items.branches'),
@@ -229,8 +251,8 @@ export default function Sidebar({ onCloseMobile }) {
           icon: GitBranch,
           badge: 'PRO',
           badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
-          isLocked: tenant?.plan !== 'PRO',
-          minPlan: 'PRO',
+          isLocked: false,
+          permission: 'branches:view',
         },
         {
           name: t('dashboard.sidebar.items.storeSettings') || t('dashboard.sidebar.items.storeProfile'),
@@ -238,6 +260,7 @@ export default function Sidebar({ onCloseMobile }) {
           icon: Settings,
           badge: null,
           isLocked: false,
+          permission: 'settings:view',
         },
         {
           name: t('dashboard.sidebar.items.upgrade'),
@@ -246,12 +269,29 @@ export default function Sidebar({ onCloseMobile }) {
           badge: tenant?.plan === 'PRO' ? null : 'PRO',
           badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
           isLocked: false,
+          permission: 'subscriptions:view',
         },
       ],
     },
   ];
 
-  const activeSections = isFreePlan ? freeNavSections : paidNavSections;
+  // Filter menu berdasarkan hak akses RBAC (hasPermission) dan Owner bypass
+  const canAccessItem = (item) => {
+    if (!item.permission) return true;
+    if (user?.isOwner) return true;
+    if (Array.isArray(item.permission)) {
+      return item.permission.some((p) => hasPermission(p));
+    }
+    return hasPermission(item.permission);
+  };
+
+  const activeSections = (isFreePlan ? freeNavSections : paidNavSections)
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(canAccessItem),
+    }))
+    .filter((section) => section.items.length > 0);
+
   const brandHref = isFreePlan ? '/dashboard/settings' : '/dashboard';
 
   return (

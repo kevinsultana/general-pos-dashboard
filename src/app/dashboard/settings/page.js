@@ -25,14 +25,28 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import api from "../../../lib/api";
 import { showAlertNotice } from "../../../lib/alerts";
+import UnauthorizedState from "../../../components/common/UnauthorizedState";
 
 export default function StoreSettingsPage() {
-  const { tenant, user, checkAuth } = useAuth();
+  const { tenant, user, checkAuth, hasPermission } = useAuth();
   const { t, language } = useLanguage();
 
   const [storeName, setStoreName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Proteksi Hak Akses (settings:view untuk melihat, settings:manage untuk mengubah)
+  const isAllowed = user?.isOwner || hasPermission("settings:view");
+  const canManage = user?.isOwner || hasPermission("settings:manage");
+
+  useEffect(() => {
+    if (!isAllowed && user) {
+      toast.error(
+        t("common.accessDeniedToast") ||
+          "Akses Ditolak: Anda tidak memiliki izin untuk fitur ini."
+      );
+    }
+  }, [isAllowed, user, t]);
 
   // Sinkronkan nama toko awal dari database
   useEffect(() => {
@@ -62,6 +76,10 @@ export default function StoreSettingsPage() {
 
   const handleSaveStoreSettings = async (e) => {
     e?.preventDefault();
+    if (!canManage) {
+      toast.error("Akses Ditolak: Anda tidak memiliki izin untuk mengubah pengaturan toko.");
+      return;
+    }
     if (!storeName.trim()) {
       toast.error("Nama toko wajib diisi.");
       return;
@@ -168,6 +186,11 @@ export default function StoreSettingsPage() {
 
   const planBadge = getPlanBadge(tenant?.plan);
 
+  // Proteksi Hak Akses (settings:view)
+  if (!isAllowed && user) {
+    return <UnauthorizedState requiredPermission="settings:view" />;
+  }
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12 animate-in fade-in duration-300">
       {/* 1. Header Section */}
@@ -245,9 +268,10 @@ export default function StoreSettingsPage() {
               />
               <button
                 type="submit"
-                disabled={isSaving || storeName.trim() === tenant?.name}
+                disabled={isSaving || storeName.trim() === tenant?.name || !canManage}
+                title={!canManage ? "Memerlukan izin ubah pengaturan toko (settings:manage)" : undefined}
                 className={`py-3 px-6 rounded-2xl font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  isSaving || storeName.trim() === tenant?.name
+                  isSaving || storeName.trim() === tenant?.name || !canManage
                     ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
                     : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/15 active:scale-98"
                 }`}
