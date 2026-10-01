@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   Store,
-  Globe,
   Calendar,
   Sparkles,
   Smartphone,
@@ -13,8 +12,6 @@ import {
   Copy,
   Check,
   ArrowRight,
-  Zap,
-  Info,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../contexts/AuthContext';
