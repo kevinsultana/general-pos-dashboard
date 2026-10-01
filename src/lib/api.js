@@ -1,7 +1,10 @@
 import toast from 'react-hot-toast';
 import { showAlertNotice } from './alerts';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:5000/api';
 
 /**
  * Mendapatkan token dari localStorage secara aman di client-side
@@ -14,10 +17,26 @@ const getToken = () => {
 };
 
 /**
- * Core HTTP Request Wrapper dengan penanganan Bearer Token & parsing response
+ * Core HTTP Request Wrapper dengan penanganan Bearer Token, Query Params,
+ * Axios-like error/response compatibility, dan Interceptor 401 / 403.
  */
 async function request(endpoint, options = {}) {
-  const url = `${BASE_URL.replace(/\/+$/, '')}/${endpoint.replace(/^\/+/, '')}`;
+  // Serialisasi options.params jika ada (seperti pada axios)
+  let queryString = '';
+  if (options.params && typeof options.params === 'object') {
+    const searchParams = new URLSearchParams();
+    Object.entries(options.params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, String(value));
+      }
+    });
+    const qs = searchParams.toString();
+    if (qs) {
+      queryString = (endpoint.includes('?') ? '&' : '?') + qs;
+    }
+  }
+
+  const url = `${BASE_URL.replace(/\/+$/, '')}/${endpoint.replace(/^\/+/, '')}${queryString}`;
 
   const headers = {
     'Content-Type': 'application/json',
@@ -34,6 +53,7 @@ async function request(endpoint, options = {}) {
     ...options,
     headers,
   };
+  delete config.params;
 
   let response;
   try {
@@ -42,6 +62,10 @@ async function request(endpoint, options = {}) {
     const error = new Error('Gagal terhubung ke server API. Pastikan server backend sedang berjalan.');
     error.status = 0;
     error.networkError = true;
+    error.response = {
+      status: 0,
+      data: { success: false, message: error.message },
+    };
     throw error;
   }
 
@@ -56,19 +80,43 @@ async function request(endpoint, options = {}) {
     }
   } else {
     try {
-      data = { message: await response.text() };
+      const text = await response.text();
+      data = text ? { message: text } : null;
     } catch {
       data = null;
     }
   }
 
   if (!response.ok) {
-    const error = new Error(
-      (data && data.message) || `Request gagal dengan status ${response.status}`
-    );
+    const errorMessage =
+      (data && data.message) || `Request gagal dengan status ${response.status}`;
+    const error = new Error(errorMessage);
     error.status = response.status;
     error.data = data;
     error.code = data?.code;
+
+    // Axios-like compatibility: error.response.data
+    error.response = {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      data: data || { success: false, message: errorMessage },
+    };
+
+    // Interceptor Global untuk Respon 401 Unauthorized / Token Expired
+    if (response.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('omnipos_token');
+      localStorage.removeItem('omnipos_user');
+      localStorage.removeItem('omnipos_tenant');
+
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith('/login') && !currentPath.startsWith('/register')) {
+        toast.error('Sesi Anda telah berakhir. Silakan login kembali.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 600);
+      }
+    }
 
     // Interceptor Global untuk Respon 403 Forbidden
     if (response.status === 403 && typeof window !== 'undefined') {
@@ -89,6 +137,42 @@ async function request(endpoint, options = {}) {
     }
 
     throw error;
+  }
+
+  // Normalisasi dual compatibility:
+  // Mendukung direct JSON (res.success, res.data) sekaligus Axios-like format (res.data.success, res.data.data)
+  if (data && typeof data === 'object') {
+    if (!('status' in data)) {
+      data.status = response.status;
+    }
+
+    // Jika objek response memiliki child property `data`
+    if (data.data !== undefined && data.data !== null && typeof data.data === 'object') {
+      if (!('success' in data.data)) {
+        Object.defineProperty(data.data, 'success', {
+          value: data.success,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      }
+      if (!('data' in data.data)) {
+        Object.defineProperty(data.data, 'data', {
+          value: data.data,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      }
+      if (data.meta && !('meta' in data.data)) {
+        Object.defineProperty(data.data, 'meta', {
+          value: data.meta,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      }
+    }
   }
 
   return data;

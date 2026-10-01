@@ -12,6 +12,7 @@ import {
   Sparkles,
   ArrowRight,
   Layers,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -114,11 +115,12 @@ const PRESET_OPTIONS = [
 export default function OnboardingWizardModal() {
   const { tenant, checkAuth } = useAuth();
   const { t } = useLanguage();
+  const [isOpen, setIsOpen] = useState(true);
   const [selectedPreset, setSelectedPreset] = useState(tenant?.businessPreset || 'RETAIL');
   const [loading, setLoading] = useState(false);
 
-  // Jika onboarding sudah selesai, jangan render modal
-  if (tenant?.isOnboardingCompleted) {
+  // Jika modal ditutup atau onboarding sudah selesai, jangan render modal
+  if (!isOpen || tenant?.isOnboardingCompleted) {
     return null;
   }
 
@@ -130,20 +132,31 @@ export default function OnboardingWizardModal() {
         isOnboardingCompleted: true,
       });
 
-      if (res.data.success) {
+      if (res?.success || res?.data?.success) {
+        setIsOpen(false);
         toast.success(
           `Alur kerja berhasil disesuaikan untuk ${
             PRESET_OPTIONS.find((p) => p.id === selectedPreset)?.title
           }!`,
           { duration: 4000 }
         );
-        await checkAuth();
+        if (checkAuth) {
+          await checkAuth();
+        }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal menyimpan konfigurasi model usaha.');
+      toast.error(
+        err.response?.data?.message ||
+        err.message ||
+        'Gagal menyimpan konfigurasi model usaha.'
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDismiss = () => {
+    setIsOpen(false);
   };
 
   return (
@@ -154,7 +167,17 @@ export default function OnboardingWizardModal() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 
         {/* Modal Header */}
-        <div className="p-6 sm:p-8 text-center border-b border-slate-100 bg-linear-to-b from-slate-50/70 to-transparent">
+        <div className="relative p-6 sm:p-8 text-center border-b border-slate-100 bg-linear-to-b from-slate-50/70 to-transparent">
+          {/* Tombol Tutup / Nanti */}
+          <button
+            type="button"
+            onClick={handleDismiss}
+            title="Tutup / Atur Nanti"
+            className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-700 text-xs font-bold mb-3 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
             <span>Wizard Model Bisnis Baru</span>
@@ -237,15 +260,24 @@ export default function OnboardingWizardModal() {
             <span>Fitur ini dapat diubah atau disesuaikan sewaktu-waktu di menu Pengaturan Toko.</span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleApplyPreset}
-            disabled={loading}
-            className="w-full sm:w-auto py-3 px-7 rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-          >
-            <span>{loading ? 'Menerapkan...' : t('onboarding.savePresetBtn') || 'Terapkan & Mulai Berjualan'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="py-3 px-5 rounded-2xl text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-bold text-sm transition-colors cursor-pointer"
+            >
+              Atur Nanti
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyPreset}
+              disabled={loading}
+              className="flex-1 sm:flex-none py-3 px-7 rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              <span>{loading ? 'Menerapkan...' : t('onboarding.savePresetBtn') || 'Terapkan & Mulai Berjualan'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
