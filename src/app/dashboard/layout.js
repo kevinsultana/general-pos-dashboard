@@ -32,7 +32,8 @@ export default function DashboardLayout({ children }) {
         router.replace('/dashboard/settings');
       } else if (
         pathname !== '/dashboard/settings' &&
-        pathname !== '/dashboard/upgrade'
+        pathname !== '/dashboard/upgrade' &&
+        pathname !== '/dashboard/users'
       ) {
         router.replace('/dashboard/upgrade');
       }

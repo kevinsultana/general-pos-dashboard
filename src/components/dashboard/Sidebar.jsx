@@ -132,6 +132,15 @@ export default function Sidebar({ onCloseMobile }) {
           minPlan: 'PLUS',
         },
         {
+          name: t('dashboard.sidebar.items.users'),
+          href: '/dashboard/upgrade',
+          icon: Users,
+          badge: 'PLUS',
+          badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+          isLocked: true,
+          minPlan: 'PLUS',
+        },
+        {
           name: t('dashboard.sidebar.items.branches'),
           href: '/dashboard/upgrade',
           icon: GitBranch,
