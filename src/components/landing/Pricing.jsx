@@ -3,70 +3,72 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Check, Sparkles, Zap, ArrowRight } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
+  const { t } = useLanguage();
 
   const tiers = [
     {
       name: 'FREE',
       planId: 'free',
-      tagline: 'Cocok untuk kedai rintisan & pop-up booth baru mulai',
+      tagline: t('pricing.free_tagline'),
       priceMonthly: 0,
       priceAnnual: 0,
       popular: false,
-      badge: 'Bebas Biaya Selamanya',
+      badge: t('pricing.foreverFree'),
       features: [
-        '1 Toko / 1 Cabang Utama',
-        '1 User Kasir / Owner',
-        'Kasir Cepat & Struk Thermal Bluetooth',
-        'Ringkasan Laporan Penjualan Harian',
-        'Katalog Hingga 100 Produk Menu',
-        'Offline-First Local Sync',
+        t('pricing.free_f1'),
+        t('pricing.free_f2'),
+        t('pricing.free_f3'),
+        t('pricing.free_f4'),
+        t('pricing.free_f5'),
+        t('pricing.free_f6'),
       ],
-      ctaText: 'Mulai Gratis',
+      ctaText: t('pricing.free_cta'),
       ctaStyle:
         'bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200/80 font-bold',
     },
     {
       name: 'PLUS',
       planId: 'plus',
-      tagline: 'Paling diminati kafe & resto mandiri yang bertumbuh pesat',
+      tagline: t('pricing.plus_tagline'),
       priceMonthly: 149000,
       priceAnnual: 119000,
       popular: true,
-      badge: 'Paling Diminati',
+      badge: t('pricing.mostPopular'),
       features: [
-        '1 Cabang Utama Bebas Batasan Omzet',
-        'Multi-User dengan Dynamic RBAC (Owner, Kasir, Spv)',
-        'Manajemen Shift & Rekonsiliasi Cash Drawer',
-        'Opname Stok Inventaris & Alert Bahan Menipis',
-        'Analitik Penjualan Mendalam & Ekspor Excel',
-        'Split Bill & Custom Pajak PB1 / Service Charge',
-        'Dukungan Prioritas CS WhatsApp 24/7',
+        t('pricing.plus_f1'),
+        t('pricing.plus_f2'),
+        t('pricing.plus_f3'),
+        t('pricing.plus_f4'),
+        t('pricing.plus_f5'),
+        t('pricing.plus_f6'),
+        t('pricing.plus_f7'),
       ],
-      ctaText: 'Pilih Paket Plus',
+      ctaText: t('pricing.plus_cta'),
       ctaStyle:
         'bg-slate-900 hover:bg-slate-800 text-white font-extrabold shadow-md shadow-slate-900/15',
     },
     {
       name: 'PRO',
       planId: 'pro',
-      tagline: 'Standar emas untuk waralaba dan jaringan multi-outlet',
+      tagline: t('pricing.pro_tagline'),
       priceMonthly: 399000,
       priceAnnual: 319000,
       popular: false,
-      badge: 'Skala Multi-Cabang',
+      badge: t('pricing.multiBranchBadge'),
       features: [
-        'Semua fitur pada Paket Plus',
-        'Multi-Cabang (Multi-Outlet) Tak Terbatas',
-        'Transfer & Distribusi Stok Antar Cabang',
-        'Laporan Konsolidasi Laba Rugi Semua Outlet',
-        'Integrasi API Webhook & Custom ERP Accounting',
-        'Audit Log Aktivitas Sensitif (Void/Diskon)',
-        'Dedicated Technical Account Manager',
+        t('pricing.pro_f1'),
+        t('pricing.pro_f2'),
+        t('pricing.pro_f3'),
+        t('pricing.pro_f4'),
+        t('pricing.pro_f5'),
+        t('pricing.pro_f6'),
+        t('pricing.pro_f7'),
       ],
-      ctaText: 'Pilih Paket Pro',
+      ctaText: t('pricing.pro_cta'),
       ctaStyle:
         'bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-bold shadow-2xs',
     },
@@ -79,13 +81,13 @@ export default function Pricing() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/75 border border-white/90 text-amber-700 text-xs font-semibold shadow-xs mb-4">
             <Zap className="w-3.5 h-3.5 text-amber-600" />
-            <span>Investasi Transparan</span>
+            <span>{t('pricing.badge')}</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-            Pilihan Paket Sesuai Fase Skala Usahamu
+            {t('pricing.title')}
           </h2>
           <p className="mt-4 text-slate-600 text-sm sm:text-base leading-relaxed">
-            Mulai dari paket gratis selamanya tanpa kartu kredit. Upgrade kapan saja saat tokomu membuka cabang baru.
+            {t('pricing.subtitle')}
           </p>
 
           {/* Annual / Monthly Toggle */}
@@ -95,7 +97,7 @@ export default function Pricing() {
                 !isAnnual ? 'text-slate-900' : 'text-slate-500'
               }`}
             >
-              Tagihan Bulanan
+              {t('pricing.monthly')}
             </span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
@@ -114,10 +116,10 @@ export default function Pricing() {
                   isAnnual ? 'text-slate-900' : 'text-slate-500'
                 }`}
               >
-                Tagihan Tahunan
+                {t('pricing.annual')}
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Hemat 20%
+                {t('pricing.annualDiscount')}
               </span>
             </div>
           </div>
@@ -163,11 +165,11 @@ export default function Pricing() {
                       <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
                         {price.toLocaleString('id-ID')}
                       </span>
-                      <span className="text-xs text-slate-500 ml-1">/ bulan</span>
+                      <span className="text-xs text-slate-500 ml-1">{t('pricing.perMonth')}</span>
                     </div>
                     {isAnnual && price > 0 && (
                       <p className="text-[11px] text-emerald-700 font-semibold mt-1">
-                        Ditagih tahunan (hemat Rp {(tier.priceMonthly - tier.priceAnnual) * 12}/thn)
+                        {t('pricing.billedAnnually')} (Rp {(price * 12).toLocaleString('id-ID')}/thn)
                       </p>
                     )}
                   </div>
@@ -175,10 +177,10 @@ export default function Pricing() {
                   {/* Feature Checklist */}
                   <div className="py-6 space-y-3.5">
                     <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Semua yang kamu dapatkan:
+                      Included Features:
                     </p>
-                    {tier.features.map((feature) => (
-                      <div key={feature} className="flex items-start gap-3 text-xs sm:text-sm text-slate-600">
+                    {tier.features.map((feature, fIdx) => (
+                      <div key={fIdx} className="flex items-start gap-3 text-xs sm:text-sm text-slate-600">
                         <div className="w-4 h-4 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mt-0.5 shrink-0">
                           <Check className="w-2.5 h-2.5" />
                         </div>

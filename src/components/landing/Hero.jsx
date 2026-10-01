@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { ArrowRight, ShieldCheck, Zap, Store, ChevronRight } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import PosMockup from './PosMockup';
 
 export default function Hero() {
+  const { t } = useLanguage();
+
   return (
     <section className="relative pt-12 pb-16 md:pt-20 md:pb-28 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,7 +19,7 @@ export default function Hero() {
           >
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
             <span className="text-xs font-semibold text-slate-700">
-              Cloud POS Multi-Tenant Generasi Terbaru
+              {t('hero.announcement')}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
           </Link>
@@ -25,15 +28,15 @@ export default function Hero() {
         {/* Hero Headline & Subheadline */}
         <div className="text-center max-w-4xl mx-auto mb-12">
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
-            Dari Kedai Pertama Hingga{' '}
+            {t('hero.titleStart')}{' '}
             <span className="bg-linear-to-r from-amber-600 via-amber-500 to-amber-700 bg-clip-text text-transparent">
-              Ratusan Cabang
+              {t('hero.titleHighlight')}
             </span>{' '}
-            Tanpa Hambatan.
+            {t('hero.titleEnd')}
           </h1>
 
           <p className="mt-5 text-base sm:text-lg lg:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Omni POS menghadirkan kecepatan transaksi kasir offline-first, isolasi tenant database yang aman, serta konsolidasi analitik multi-outlet secara real-time dalam balutan antarmuka kaca yang jernih.
+            {t('hero.subtitle')}
           </p>
 
           {/* Action CTAs */}
@@ -42,7 +45,7 @@ export default function Hero() {
               href="/register"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-sm sm:text-base font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-[0_8px_25px_rgba(15,23,42,0.18)] hover:shadow-[0_12px_30px_rgba(15,23,42,0.25)] transition-all duration-300 active:scale-95"
             >
-              <span>Mulai Gratis Sekarang</span>
+              <span>{t('hero.ctaPrimary')}</span>
               <ArrowRight className="w-4 h-4 text-white" />
             </Link>
 
@@ -50,7 +53,7 @@ export default function Hero() {
               href="#fitur"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-sm sm:text-base font-semibold text-slate-700 hover:text-slate-900 bg-white/80 hover:bg-white border border-white/90 shadow-sm backdrop-blur-xl transition-all duration-200"
             >
-              <span>Eksplorasi Fitur</span>
+              <span>{t('hero.ctaSecondary')}</span>
             </a>
           </div>
 
@@ -58,15 +61,15 @@ export default function Hero() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600 font-medium">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Isolasi Data Row-Level Tenant</span>
+              <span>{t('hero.badgeIsolation')}</span>
             </div>
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-600" />
-              <span>Cetak Struk Thermal Sub-Detik</span>
+              <span>{t('hero.badgeThermal')}</span>
             </div>
             <div className="flex items-center gap-2">
               <Store className="w-4 h-4 text-slate-500" />
-              <span>Siap Multi-Outlet Tanpa Batas</span>
+              <span>{t('hero.badgeMultiOutlet')}</span>
             </div>
           </div>
         </div>

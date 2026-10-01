@@ -24,10 +24,12 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { showConfirmDialog, showAlertNotice } from '../../lib/alerts';
 
 export default function DashboardPage() {
   const { user, tenant } = useAuth();
+  const { t, language } = useLanguage();
   const [selectedFilter, setSelectedFilter] = useState('ALL');
 
   // Contoh Data Transaksi Semasa yang Realistik untuk POS F&B / Runcit
@@ -85,22 +87,22 @@ export default function DashboardPage() {
   ];
 
   const handlePrintReceipt = (trxId) => {
-    toast.success(`Menghantar perintah cetak struk ${trxId} ke pencetak Bluetooth/Thermal...`, {
+    toast.success(t('dashboard.page.printReceiptNotice', { id: trxId }), {
       icon: '🖨️',
     });
   };
 
   const handleCloseShift = async () => {
     const result = await showConfirmDialog({
-      title: 'Tutup Syif Kasir Semasa?',
-      text: 'Adakah anda ingin menutup syif ini dan menjana laporan imbangan wang tunai (laci tunai)?',
-      confirmButtonText: 'Ya, Tutup Syif',
-      cancelButtonText: 'Batal',
+      title: t('dashboard.page.kpiShiftConfirmTitle'),
+      text: t('dashboard.page.kpiShiftConfirmText'),
+      confirmButtonText: t('dashboard.page.kpiShiftConfirmBtn'),
+      cancelButtonText: t('common.cancel'),
       icon: 'question',
     });
 
     if (result.isConfirmed) {
-      toast.success('Syif kasir ditutup. Laporan ringkasan telah dijana ke peti masuk emel pengurus.', {
+      toast.success(t('dashboard.shiftClosedSuccess'), {
         duration: 5000,
       });
     }
@@ -110,9 +112,9 @@ export default function DashboardPage() {
     toast.promise(
       new Promise((resolve) => setTimeout(resolve, 1000)),
       {
-        loading: 'Menjana fail laporan jualan Excel/PDF...',
-        success: 'Fail laporan harian sedia dimuat turun!',
-        error: 'Gagal menjana laporan.',
+        loading: t('dashboard.exportLoading'),
+        success: t('dashboard.exportSuccess'),
+        error: 'Failed to export',
       }
     );
   };
@@ -131,7 +133,7 @@ export default function DashboardPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50/90 border border-amber-200/70 text-amber-800 text-[11px] font-bold mb-2 shadow-2xs">
             <Calendar className="w-3 h-3 text-amber-600" />
             <span>
-              {new Date().toLocaleDateString('id-ID', {
+              {new Date().toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -140,11 +142,13 @@ export default function DashboardPage() {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Papan Pemuka Kasir & Analitik
+            {t('dashboard.page.title')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Selamat bertugas, <span className="font-bold text-slate-800">{user?.name}</span>. Pantau
-            operasi harian kedai <span className="font-semibold text-slate-700">{tenant?.name}</span>.
+            {t('dashboard.page.greeting', {
+              name: user?.name || (language === 'id' ? 'Pengguna' : 'User'),
+              store: tenant?.name || (language === 'id' ? 'Kedai Utama' : 'Main Store'),
+            })}
           </p>
         </div>
 
@@ -156,20 +160,20 @@ export default function DashboardPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-white/80 hover:bg-white border border-slate-200/80 shadow-2xs transition-all active:scale-95"
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Eksport Data</span>
+            <span>{t('dashboard.page.exportBtn')}</span>
           </button>
 
           <button
             type="button"
             onClick={() =>
-              toast('Membuka terminal juruwang pantas...', {
+              toast(t('dashboard.page.newOrderNotice'), {
                 icon: '🛒',
               })
             }
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-md shadow-slate-900/15 transition-all active:scale-95"
           >
             <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
-            <span>Pesanan Baharu</span>
+            <span>{t('dashboard.page.newOrderBtn')}</span>
           </button>
         </div>
       </div>
@@ -180,7 +184,7 @@ export default function DashboardPage() {
         <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
           <div className="flex items-center justify-between text-slate-500 mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Jualan Hari Ini
+              {t('dashboard.page.kpiSalesTitle')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-2xs">
               <TrendingUp className="w-4 h-4" />
@@ -189,7 +193,7 @@ export default function DashboardPage() {
           <p className="text-2xl font-black text-slate-900 tracking-tight">Rp 4.850.000</p>
           <div className="flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-emerald-600">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>+18.4% vs kelmarin</span>
+            <span>{t('dashboard.page.kpiSalesVs')}</span>
           </div>
         </div>
 
@@ -197,15 +201,18 @@ export default function DashboardPage() {
         <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
           <div className="flex items-center justify-between text-slate-500 mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Transaksi Selesai
+              {t('dashboard.page.kpiTrxTitle')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-2xs">
               <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 tracking-tight">52 Pesanan</p>
+          <p className="text-2xl font-black text-slate-900 tracking-tight">
+            52 {t('dashboard.page.kpiTrxUnit')}
+          </p>
           <p className="text-[11px] font-medium text-slate-500 mt-2">
-            Purata tiket: <span className="font-bold text-slate-700">Rp 93.200</span>
+            {t('dashboard.page.kpiTrxAvg')}{' '}
+            <span className="font-bold text-slate-700">Rp 93.200</span>
           </p>
         </div>
 
@@ -213,23 +220,27 @@ export default function DashboardPage() {
         <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
           <div className="flex items-center justify-between text-slate-500 mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Syif Semasa
+              {t('dashboard.page.kpiShiftTitle')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-2xl font-black text-slate-900 tracking-tight">Syif Pagi</p>
+            <p className="text-2xl font-black text-slate-900 tracking-tight">
+              {t('dashboard.page.kpiShiftName')}
+            </p>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </div>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-[11px] text-slate-500">Laci Tunai: Rp 500k</span>
+            <span className="text-[11px] text-slate-500">
+              {t('dashboard.page.kpiShiftDrawer')}
+            </span>
             <button
               onClick={handleCloseShift}
               className="text-[10px] font-bold text-rose-600 hover:text-rose-700 underline underline-offset-2"
             >
-              Tutup Syif
+              {t('dashboard.page.kpiShiftCloseBtn')}
             </button>
           </div>
         </div>
@@ -238,15 +249,17 @@ export default function DashboardPage() {
         <div className="p-5 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-inset ring-white/60 relative overflow-hidden group hover:shadow-md transition-all">
           <div className="flex items-center justify-between text-slate-500 mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Amaran Stok
+              {t('dashboard.page.kpiStockTitle')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-2xs">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 tracking-tight">3 SKU Menipis</p>
+          <p className="text-2xl font-black text-slate-900 tracking-tight">
+            {t('dashboard.page.kpiStockValue')}
+          </p>
           <p className="text-[11px] font-medium text-slate-500 mt-2 truncate">
-            Biji Kopi Arabica & Susu UHT
+            {t('dashboard.page.kpiStockDesc')}
           </p>
         </div>
       </div>
@@ -259,11 +272,11 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <Receipt className="w-4 h-4 text-amber-600" />
               <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
-                Transaksi Jualan Terkini
+                {t('dashboard.page.tableTitle')}
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Rekod pesanan yang masuk secara langsung melalui terminal kasir aktif.
+              {t('dashboard.page.tableSubtitle')}
             </p>
           </div>
 
@@ -278,7 +291,7 @@ export default function DashboardPage() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Semua
+              {t('dashboard.page.filterAll')}
             </button>
             <button
               type="button"
@@ -289,7 +302,7 @@ export default function DashboardPage() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Selesai
+              {t('dashboard.page.filterCompleted')}
             </button>
             <button
               type="button"
@@ -300,7 +313,7 @@ export default function DashboardPage() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Sedang Diproses
+              {t('dashboard.page.filterProcessing')}
             </button>
           </div>
         </div>
@@ -310,18 +323,25 @@ export default function DashboardPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200/50 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                <th className="py-3 px-3">No. Pesanan</th>
-                <th className="py-3 px-3">Masa & Pelanggan</th>
-                <th className="py-3 px-3">Item Pesanan</th>
-                <th className="py-3 px-3">Kaedah</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3 text-right">Jumlah</th>
-                <th className="py-3 px-3 text-center">Tindakan</th>
+                <th className="py-3 px-3">{t('dashboard.page.thOrderNo')}</th>
+                <th className="py-3 px-3">{t('dashboard.page.thCustomer')}</th>
+                <th className="py-3 px-3">{t('dashboard.page.thItems')}</th>
+                <th className="py-3 px-3">{t('dashboard.page.thMethod')}</th>
+                <th className="py-3 px-3">{t('dashboard.page.thStatus')}</th>
+                <th className="py-3 px-3 text-right">{t('dashboard.page.thTotal')}</th>
+                <th className="py-3 px-3 text-center">{t('dashboard.page.thAction')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
               {filteredTransactions.map((trx) => {
                 const MethodIcon = trx.methodIcon;
+                const formattedMethod =
+                  trx.method === 'Tunai'
+                    ? language === 'id'
+                      ? 'Tunai'
+                      : 'Cash'
+                    : trx.method;
+
                 return (
                   <tr
                     key={trx.id}
@@ -347,7 +367,7 @@ export default function DashboardPage() {
                     <td className="py-3.5 px-3">
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 border border-slate-200/60 text-[11px] font-semibold text-slate-700">
                         <MethodIcon className="w-3.5 h-3.5 text-amber-600" />
-                        <span>{trx.method}</span>
+                        <span>{formattedMethod}</span>
                       </div>
                     </td>
 
@@ -356,12 +376,12 @@ export default function DashboardPage() {
                       {trx.status === 'COMPLETED' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
                           <CheckCircle2 className="w-3 h-3" />
-                          <span>Selesai</span>
+                          <span>{t('dashboard.page.statusCompleted')}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold">
                           <Hourglass className="w-3 h-3 animate-spin" />
-                          <span>Sedang Diproses</span>
+                          <span>{t('dashboard.page.statusProcessing')}</span>
                         </span>
                       )}
                     </td>
@@ -377,7 +397,7 @@ export default function DashboardPage() {
                         type="button"
                         onClick={() => handlePrintReceipt(trx.id)}
                         className="p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all shadow-2xs"
-                        title="Cetak Struk Thermal"
+                        title={t('dashboard.page.printReceiptTitle')}
                       >
                         <Printer className="w-4 h-4" />
                       </button>
@@ -391,17 +411,17 @@ export default function DashboardPage() {
 
         {/* Kaki Jadual */}
         <div className="pt-3 border-t border-slate-200/50 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-          <span>Menunjukkan 5 transaksi terbaharu daripada 52 pesanan hari ini</span>
+          <span>{t('dashboard.page.tableFooter')}</span>
           <button
             type="button"
             onClick={() =>
-              toast('Membuka arkib sejarah transaksi penuh...', {
+              toast(t('dashboard.page.viewAllNotice'), {
                 icon: '📋',
               })
             }
             className="font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
           >
-            <span>Lihat Semua Transaksi</span>
+            <span>{t('dashboard.page.viewAllBtn')}</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>

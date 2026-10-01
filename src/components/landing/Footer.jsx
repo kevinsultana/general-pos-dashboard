@@ -1,7 +1,11 @@
+'use client';
+
 import { Layers, ArrowUpRight } from "lucide-react";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { t } = useLanguage();
 
   return (
     <footer className="relative border-t border-slate-200/60 bg-white/40 backdrop-blur-xl text-slate-600 overflow-hidden">
@@ -10,7 +14,7 @@ export default function Footer() {
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-linear-to-brrom-amber-500 to-amber-600 p-0.5 shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-xs">
                 <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
                   <Layers className="w-4 h-4 text-amber-600" />
                 </div>
@@ -26,10 +30,7 @@ export default function Footer() {
             </div>
 
             <p className="text-xs sm:text-sm text-slate-600 max-w-sm leading-relaxed">
-              Platform Point of Sale SaaS generasi mutakhir dengan arsitektur
-              multi-tenant, menjamin keamanan data terisolasi, kasir
-              offline-first super cepat, dan pemantauan multi-cabang tanpa
-              batasan.
+              {t('footer.desc')}
             </p>
 
             {/* Cloud Status Indicator */}
@@ -39,7 +40,7 @@ export default function Footer() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               <span className="font-mono text-[11px]">
-                All API Clusters Operational
+                {t('footer.clusterStatus')}
               </span>
             </div>
           </div>
@@ -47,7 +48,7 @@ export default function Footer() {
           {/* Produk */}
           <div>
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">
-              Produk & Modul
+              {t('footer.productsHeading')}
             </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
@@ -55,7 +56,7 @@ export default function Footer() {
                   href="#fitur"
                   className="hover:text-amber-700 transition-colors"
                 >
-                  Aplikasi Kasir POS
+                  {t('footer.posApp')}
                 </a>
               </li>
               <li>
@@ -63,7 +64,7 @@ export default function Footer() {
                   href="#fitur"
                   className="hover:text-amber-700 transition-colors"
                 >
-                  Manajemen Shift & Kas
+                  {t('footer.cashAudit')}
                 </a>
               </li>
               <li>
@@ -71,7 +72,7 @@ export default function Footer() {
                   href="#solusi"
                   className="hover:text-amber-700 transition-colors"
                 >
-                  Multi-Outlet Sync
+                  {t('footer.multiBranch')}
                 </a>
               </li>
               <li>
@@ -79,7 +80,7 @@ export default function Footer() {
                   href="#harga"
                   className="hover:text-amber-700 transition-colors"
                 >
-                  Paket Langganan
+                  {t('navbar.pricing')}
                 </a>
               </li>
               <li>
@@ -88,7 +89,7 @@ export default function Footer() {
                   target="_blank"
                   className="hover:text-amber-700 inline-flex items-center gap-1 transition-colors"
                 >
-                  <span>Dokumentasi API</span>
+                  <span>API Docs (Swagger)</span>
                   <ArrowUpRight className="w-3 h-3 text-slate-400" />
                 </a>
               </li>
@@ -98,17 +99,17 @@ export default function Footer() {
           {/* Solusi */}
           <div>
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">
-              Solusi Industri
+              {t('navbar.solutions')}
             </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Kedai Kopi & Cafe
+                  Coffee Shop & Cafe
                 </span>
               </li>
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Restoran Mandiri (Dine-in)
+                  Dine-in Restaurants
                 </span>
               </li>
               <li>
@@ -118,7 +119,7 @@ export default function Footer() {
               </li>
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Franchise & Multi-Branch
+                  Franchise & Multi-Outlet
                 </span>
               </li>
               <li>
@@ -132,32 +133,32 @@ export default function Footer() {
           {/* Keamanan & Legal */}
           <div>
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">
-              Keamanan & Dukungan
+              {t('footer.companyHeading')}
             </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Isolasi Row-Level Tenant
+                  {t('hero.badgeIsolation')}
                 </span>
               </li>
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Kebijakan Privasi
+                  {t('footer.privacy')}
                 </span>
               </li>
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Ketentuan Layanan
+                  Terms of Service
                 </span>
               </li>
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Bantuan WhatsApp 24/7
+                  WhatsApp Support 24/7
                 </span>
               </li>
               <li>
                 <span className="hover:text-amber-700 cursor-pointer transition-colors">
-                  Status Sistem Cloud
+                  Cloud Cluster Status
                 </span>
               </li>
             </ul>
@@ -167,13 +168,11 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-14 pt-8 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>
-            © {currentYear} Omni POS Technologies. Seluruh hak cipta dilindungi
-            undang-undang.
+            © {currentYear} {t('footer.copyright')}
           </p>
           <div className="flex items-center gap-6">
             <span>
-              Didesain dengan True Light Glassmorphism & Cloud Multi-Tenant
-              Architecture
+              True Light-Mode Glassmorphism + Soft Liquid Aura
             </span>
           </div>
         </div>

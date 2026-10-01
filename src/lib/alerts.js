@@ -44,12 +44,12 @@ export const showConfirmDialog = async ({
 /**
  * Dialog Pengesahan Log Keluar (Logout Confirmation)
  */
-export const confirmLogout = async () => {
+export const confirmLogout = async (options = {}) => {
   return showConfirmDialog({
-    title: 'Log Keluar dari Omni POS?',
-    text: 'Sesi kerja dan sambungan terminal aktif anda pada peranti ini akan ditamatkan.',
-    confirmButtonText: 'Ya, Log Keluar',
-    cancelButtonText: 'Kekal di Sistem',
+    title: options.title || 'Log Keluar dari Omni POS?',
+    text: options.text || 'Sesi kerja dan sambungan terminal aktif anda pada peranti ini akan ditamatkan.',
+    confirmButtonText: options.confirmButtonText || 'Ya, Log Keluar',
+    cancelButtonText: options.cancelButtonText || 'Kekal di Sistem',
     icon: 'question',
   });
 };

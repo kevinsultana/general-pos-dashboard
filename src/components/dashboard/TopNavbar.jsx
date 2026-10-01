@@ -7,23 +7,29 @@ import {
   LogOut,
   Bell,
   RefreshCw,
-  Search,
-  ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import LanguageSwitcher from '../common/LanguageSwitcher';
 import { confirmLogout } from '../../lib/alerts';
 
 export default function TopNavbar({ onToggleMobile }) {
   const router = useRouter();
   const { user, tenant, logout } = useAuth();
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
-    const result = await confirmLogout();
+    const result = await confirmLogout({
+      title: t('dashboard.logoutPromptTitle'),
+      text: t('dashboard.logoutPromptText'),
+      confirmButtonText: t('dashboard.logoutConfirm'),
+      cancelButtonText: t('dashboard.logoutCancel'),
+    });
     if (result.isConfirmed) {
       logout();
-      toast.success('Anda telah berjaya log keluar.');
+      toast.success(t('dashboard.logoutSuccess'));
       router.push('/login');
     }
   };
@@ -32,9 +38,9 @@ export default function TopNavbar({ onToggleMobile }) {
     toast.promise(
       new Promise((resolve) => setTimeout(resolve, 1200)),
       {
-        loading: 'Menyelaraskan data pesanan dengan pelayan cloud...',
-        success: 'Semua rekod transaksi berjaya disegerakkan!',
-        error: 'Ralat penyegerakan pelayan.',
+        loading: t('dashboard.cloudSyncToast'),
+        success: t('dashboard.cloudSyncSuccess'),
+        error: 'Sync error',
       }
     );
   };
@@ -43,19 +49,19 @@ export default function TopNavbar({ onToggleMobile }) {
     switch (plan) {
       case 'PRO':
         return {
-          label: 'Pelan PRO',
+          label: t('dashboard.planPro'),
           classes: 'bg-purple-50 text-purple-700 border-purple-200 shadow-purple-500/10',
           dot: 'bg-purple-500',
         };
       case 'PLUS':
         return {
-          label: 'Pelan PLUS',
+          label: t('dashboard.planPlus'),
           classes: 'bg-amber-50 text-amber-700 border-amber-200 shadow-amber-500/10',
           dot: 'bg-amber-500',
         };
       default:
         return {
-          label: 'Pelan FREE',
+          label: t('dashboard.planFree'),
           classes: 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-emerald-500/10',
           dot: 'bg-emerald-500',
         };
@@ -74,7 +80,7 @@ export default function TopNavbar({ onToggleMobile }) {
             type="button"
             onClick={onToggleMobile}
             className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-colors"
-            aria-label="Buka Menu Navigasi"
+            aria-label="Toggle navigation menu"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -83,7 +89,7 @@ export default function TopNavbar({ onToggleMobile }) {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100/80 border border-slate-200/70 text-xs font-semibold text-slate-800 shadow-2xs">
               <Store className="w-3.5 h-3.5 text-amber-600" />
-              <span>Cabang Utama</span>
+              <span>{t('dashboard.mainBranch')}</span>
             </div>
 
             {/* Plan Badge Pill */}
@@ -96,13 +102,16 @@ export default function TopNavbar({ onToggleMobile }) {
           </div>
         </div>
 
-        {/* Right Side: Quick Action Utilities & User Avatar */}
+        {/* Right Side: Language Switcher, Cloud Sync, User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Cloud Sync Button */}
           <button
             type="button"
             onClick={handleSync}
-            title="Segerakkan data terkini"
+            title="Sync data"
             className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-white/80 border border-transparent hover:border-slate-200/60 transition-all active:scale-95"
           >
             <RefreshCw className="w-4 h-4" />
@@ -111,8 +120,8 @@ export default function TopNavbar({ onToggleMobile }) {
           {/* Notifications Trigger */}
           <button
             type="button"
-            onClick={() => toast('Tiada pemberitahuan sistem baharu.', { icon: '🔔' })}
-            title="Pemberitahuan"
+            onClick={() => toast(t('dashboard.noNotifications'), { icon: '🔔' })}
+            title="Notifications"
             className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-white/80 border border-transparent hover:border-slate-200/60 transition-all active:scale-95 relative"
           >
             <Bell className="w-4 h-4" />
@@ -128,7 +137,9 @@ export default function TopNavbar({ onToggleMobile }) {
                 {user?.name || 'Pengguna'}
               </p>
               <p className="text-[10px] font-medium text-slate-400 capitalize">
-                {user?.isOwner ? 'Pemilik Toko' : user?.role || 'Kasir'}
+                {user?.isOwner
+                  ? t('dashboard.sidebar.ownerRole')
+                  : user?.role || t('dashboard.sidebar.cashierRole')}
               </p>
             </div>
 
@@ -142,7 +153,7 @@ export default function TopNavbar({ onToggleMobile }) {
             <button
               type="button"
               onClick={handleLogout}
-              title="Log Keluar"
+              title={t('dashboard.sidebar.endSessionBtn')}
               className="p-2 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
             >
               <LogOut className="w-4 h-4" />

@@ -18,10 +18,13 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import LanguageSwitcher from '../../components/common/LanguageSwitcher';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     storeSlug: '',
@@ -116,20 +119,24 @@ export default function LoginPage() {
           className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full bg-white/70 border border-white/80 shadow-xs backdrop-blur-xl transition-all"
         >
           <ArrowLeft className="w-4 h-4 text-slate-500" />
-          <span>Kembali ke Beranda</span>
+          <span>{t('auth.login.backHome')}</span>
         </Link>
 
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm shadow-amber-500/20 group-hover:scale-105 transition-transform">
-            <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-              <Layers className="w-4 h-4 text-amber-600" />
+        {/* Language Switcher & Brand Logo */}
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm shadow-amber-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                <Layers className="w-4 h-4 text-amber-600" />
+              </div>
             </div>
-          </div>
-          <span className="text-base font-bold tracking-tight text-slate-900">
-            Omni<span className="text-amber-600">POS</span>
-          </span>
-        </Link>
+            <span className="text-base font-bold tracking-tight text-slate-900 hidden sm:inline-block">
+              Omni<span className="text-amber-600">POS</span>
+            </span>
+          </Link>
+        </div>
       </header>
 
       {/* Main Content Area: Centered Glass Login Card */}
@@ -149,10 +156,10 @@ export default function LoginPage() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Selamat Datang Kembali
+                {t('auth.login.title')}
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed">
-                Masuk ke portal kasir & dashboard analitik toko Anda.
+                {t('auth.login.subtitle')}
               </p>
             </div>
 
@@ -168,13 +175,13 @@ export default function LoginPage() {
               {/* ID / Slug Toko */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  ID / Slug Toko
+                  {t('auth.login.storeSlug')}
                 </label>
                 <div className="relative">
                   <Store className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="kopi-senja"
+                    placeholder={t('auth.login.storeSlugPlaceholder')}
                     value={formData.storeSlug}
                     onChange={(e) => handleChange('storeSlug', e.target.value)}
                     className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs font-mono ${
@@ -192,13 +199,13 @@ export default function LoginPage() {
               {/* Email Pengguna */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Alamat Email Pengguna
+                  {t('auth.login.email')}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="email"
-                    placeholder="kasir@tokomu.com"
+                    placeholder={t('auth.login.emailPlaceholder')}
                     value={formData.email}
                     onChange={(e) => handleChange('email', e.target.value)}
                     className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
@@ -217,17 +224,17 @@ export default function LoginPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-slate-700">
-                    Kata Sandi
+                    {t('auth.login.password')}
                   </label>
                   <a
                     href="#lupa-password"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert('Silakan hubungi pemilik toko (Owner) Anda untuk melakukan reset kata sandi akun.');
+                      alert(t('auth.login.forgotPasswordAlert'));
                     }}
                     className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 transition-colors"
                   >
-                    Lupa password?
+                    {t('auth.login.forgotPassword')}
                   </a>
                 </div>
                 <div className="relative">
@@ -266,11 +273,11 @@ export default function LoginPage() {
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Memverifikasi Akun...</span>
+                    <span>{t('auth.login.submittingBtn')}</span>
                   </>
                 ) : (
                   <>
-                    <span>Masuk ke Dashboard</span>
+                    <span>{t('auth.login.submitBtn')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -279,12 +286,12 @@ export default function LoginPage() {
               {/* Bottom Link to Register */}
               <div className="text-center pt-3 border-t border-slate-200/60">
                 <p className="text-xs text-slate-600">
-                  Belum mendaftarkan tokomu?{' '}
+                  {t('auth.login.dontHaveAccount')}{' '}
                   <Link
                     href="/register"
                     className="font-bold text-slate-900 hover:text-amber-700 underline underline-offset-4 decoration-amber-400/60 transition-colors"
                   >
-                    Mulai gratis di sini
+                    {t('auth.login.registerHere')}
                   </Link>
                 </p>
               </div>
@@ -295,7 +302,7 @@ export default function LoginPage() {
 
       {/* Footer Info */}
       <footer className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-slate-400">
-        <p>© {new Date().getFullYear()} Omni POS Technologies. Dilindungi enkripsi row-level tenant security.</p>
+        <p>© {new Date().getFullYear()} {t('auth.login.footer')}</p>
       </footer>
 
       {/* Modal Khusus Pembatasan Akses Paket FREE (PLAN_RESTRICTED) */}
@@ -318,10 +325,10 @@ export default function LoginPage() {
 
             {/* Content */}
             <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-              Akses Web Khusus Paket PLUS & PRO
+              {t('auth.planRestrictedModal.title')}
             </h3>
             <p className="mt-2.5 text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Toko Anda saat ini berada di paket <span className="font-bold text-slate-900">FREE</span> (Khusus Mobile POS Offline). Untuk mengakses Dashboard Backoffice Web, silakan gunakan aplikasi kasir mobile atau upgrade paket toko Anda.
+              {t('auth.planRestrictedModal.desc')}
             </p>
 
             {/* Actions */}
@@ -332,17 +339,17 @@ export default function LoginPage() {
                 className="flex-1 py-3 px-4 rounded-xl text-center text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-sm transition-all flex items-center justify-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Lihat Pilihan Upgrade</span>
+                <span>{t('auth.planRestrictedModal.upgradeBtn')}</span>
               </Link>
 
               <button
                 type="button"
                 onClick={() => {
-                  alert('Unduhan APK Android & iOS Omni POS Mobile kasir akan segera tersedia di Google Play Store dan Apple App Store.');
+                  alert(t('auth.planRestrictedModal.downloadAlert'));
                 }}
                 className="py-3 px-4 rounded-xl text-center text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/70 border border-slate-200/80 transition-all"
               >
-                Unduh Aplikasi Mobile
+                {t('auth.planRestrictedModal.downloadAppBtn')}
               </button>
             </div>
           </div>

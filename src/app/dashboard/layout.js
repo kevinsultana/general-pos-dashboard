@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import Sidebar from '../../components/dashboard/Sidebar';
 import TopNavbar from '../../components/dashboard/TopNavbar';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Proteksi Rute: Jika belum login dan proses validasi selesai, tendang ke /login
@@ -37,7 +39,7 @@ export default function DashboardLayout({ children }) {
         <div className="flex flex-col items-center gap-3">
           <div className="w-9 h-9 border-3 border-amber-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-semibold text-slate-500">
-            Mengesahkan sesi kerja Omni POS...
+            {t('dashboard.sessionValidating')}
           </p>
         </div>
       </div>

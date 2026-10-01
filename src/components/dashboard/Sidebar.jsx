@@ -21,35 +21,42 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { confirmLogout, showAlertNotice } from '../../lib/alerts';
 
 export default function Sidebar({ onCloseMobile }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, tenant, logout } = useAuth();
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
-    const result = await confirmLogout();
+    const result = await confirmLogout({
+      title: t('dashboard.logoutPromptTitle'),
+      text: t('dashboard.logoutPromptText'),
+      confirmButtonText: t('dashboard.logoutConfirm'),
+      cancelButtonText: t('dashboard.logoutCancel'),
+    });
     if (result.isConfirmed) {
       logout();
-      toast.success('Anda telah berjaya log keluar.');
+      toast.success(t('dashboard.logoutSuccess'));
       router.push('/login');
     }
   };
 
   const handleRestrictedClick = (title, minPlan) => {
     showAlertNotice({
-      title: `Ciri Khas Pelan ${minPlan}`,
-      text: `Modul "${title}" hanya tersedia untuk pelanggan pelan langganan ${minPlan} ke atas. Sila naik taraf akaun kedai anda untuk mengaktifkannya.`,
+      title: t('dashboard.sidebar.restrictedNoticeTitle', { plan: minPlan }),
+      text: t('dashboard.sidebar.restrictedNoticeText', { title, plan: minPlan }),
       icon: 'info',
-      confirmButtonText: 'Tutup',
+      confirmButtonText: t('common.tutup') || 'Tutup',
     });
   };
 
   const handlePlaceholderClick = (e, title, href) => {
     if (href !== '/dashboard') {
       e.preventDefault();
-      toast(`Modul ${title} sedang dalam fasa sinkronisasi...`, {
+      toast(t('dashboard.sidebar.moduleSyncNotice', { title }), {
         icon: '⚡',
       });
       if (onCloseMobile) onCloseMobile();
@@ -59,37 +66,37 @@ export default function Sidebar({ onCloseMobile }) {
   // Kumpulan Navigasi Modular
   const navSections = [
     {
-      group: 'Utama',
+      group: t('dashboard.sidebar.groups.main'),
       items: [
         {
-          name: 'Ringkasan Papan Pemuka',
+          name: t('dashboard.sidebar.items.dashboard'),
           href: '/dashboard',
           icon: LayoutDashboard,
           badge: null,
           isLocked: false,
         },
         {
-          name: 'Terminal POS Kasir',
+          name: t('dashboard.sidebar.items.pos'),
           href: '/dashboard/pos',
           icon: Store,
-          badge: 'Aktif',
+          badge: t('dashboard.sidebar.activeBadge'),
           badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           isLocked: false,
         },
       ],
     },
     {
-      group: 'Operasi & Jualan',
+      group: t('dashboard.sidebar.groups.operations'),
       items: [
         {
-          name: 'Transaksi & Pesanan',
+          name: t('dashboard.sidebar.items.transactions'),
           href: '/dashboard/transactions',
           icon: Receipt,
           badge: null,
           isLocked: false,
         },
         {
-          name: 'Pengurusan Syif Kasir',
+          name: t('dashboard.sidebar.items.shifts'),
           href: '/dashboard/shifts',
           icon: Clock,
           badge: null,
@@ -98,17 +105,17 @@ export default function Sidebar({ onCloseMobile }) {
       ],
     },
     {
-      group: 'Inventori & Produk',
+      group: t('dashboard.sidebar.groups.inventory'),
       items: [
         {
-          name: 'Senarai Produk & Menu',
+          name: t('dashboard.sidebar.items.products'),
           href: '/dashboard/products',
           icon: Package,
           badge: null,
           isLocked: false,
         },
         {
-          name: 'Kategori & Bahan',
+          name: t('dashboard.sidebar.items.categories'),
           href: '/dashboard/categories',
           icon: Layers,
           badge: null,
@@ -117,10 +124,10 @@ export default function Sidebar({ onCloseMobile }) {
       ],
     },
     {
-      group: 'Pentadbiran & Tetapan',
+      group: t('dashboard.sidebar.groups.admin'),
       items: [
         {
-          name: 'Pekerja & Akses (RBAC)',
+          name: t('dashboard.sidebar.items.users'),
           href: '/dashboard/users',
           icon: Users,
           badge: tenant?.plan === 'FREE' ? 'PLUS' : null,
@@ -129,7 +136,7 @@ export default function Sidebar({ onCloseMobile }) {
           minPlan: 'PLUS',
         },
         {
-          name: 'Pengurusan Cawangan',
+          name: t('dashboard.sidebar.items.branches'),
           href: '/dashboard/branches',
           icon: GitBranch,
           badge: 'PRO',
@@ -138,7 +145,7 @@ export default function Sidebar({ onCloseMobile }) {
           minPlan: 'PRO',
         },
         {
-          name: 'Tetapan & Cetakan Struk',
+          name: t('dashboard.sidebar.items.settings'),
           href: '/dashboard/settings',
           icon: Settings,
           badge: null,
@@ -169,7 +176,7 @@ export default function Sidebar({ onCloseMobile }) {
                   Omni<span className="text-amber-600">POS</span>
                 </p>
                 <p className="text-[11px] font-semibold text-slate-500 truncate max-w-[150px]">
-                  {tenant?.name || 'Kedai Utama'}
+                  {tenant?.name || t('dashboard.sidebar.brandSubtitle')}
                 </p>
               </div>
             </Link>
@@ -177,10 +184,10 @@ export default function Sidebar({ onCloseMobile }) {
             {/* Cloud Sync Status Pill */}
             <div
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50/80 border border-emerald-200/70 text-[10px] font-bold text-emerald-700 shadow-2xs"
-              title="Semua terminal bersambung ke Cloud Database"
+              title={t('common.cloudSyncActive')}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="hidden sm:inline">Online</span>
+              <span className="hidden sm:inline">{t('common.online')}</span>
             </div>
           </div>
 
@@ -284,7 +291,9 @@ export default function Sidebar({ onCloseMobile }) {
               <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'Pengguna'}</p>
               <div className="flex items-center gap-1 mt-0.5">
                 <span className="text-[10px] font-semibold text-slate-500 capitalize">
-                  {user?.isOwner ? 'Pemilik Utama' : user?.role || 'Juruwang'}
+                  {user?.isOwner
+                    ? t('dashboard.sidebar.ownerRole')
+                    : user?.role || t('dashboard.sidebar.cashierRole')}
                 </span>
               </div>
             </div>
@@ -293,7 +302,7 @@ export default function Sidebar({ onCloseMobile }) {
           <button
             type="button"
             onClick={handleLogout}
-            title="Log Keluar"
+            title={t('dashboard.sidebar.endSessionBtn')}
             className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -307,7 +316,7 @@ export default function Sidebar({ onCloseMobile }) {
           className="w-full py-2.5 px-3 rounded-xl font-bold text-xs text-rose-700 bg-rose-50/70 hover:bg-rose-100/80 border border-rose-200/60 shadow-2xs flex items-center justify-center gap-2 transition-all active:scale-98"
         >
           <LogOut className="w-3.5 h-3.5" />
-          <span>Tamatkan Sesi / Log Keluar</span>
+          <span>{t('dashboard.sidebar.endSessionBtn')}</span>
         </button>
       </div>
     </aside>

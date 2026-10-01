@@ -17,10 +17,13 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import LanguageSwitcher from '../../components/common/LanguageSwitcher';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     storeName: '',
@@ -174,20 +177,24 @@ export default function RegisterPage() {
           className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 px-3.5 py-1.5 rounded-full bg-white/70 border border-white/80 shadow-xs backdrop-blur-xl transition-all"
         >
           <ArrowLeft className="w-4 h-4 text-slate-500" />
-          <span>Kembali ke Beranda</span>
+          <span>{t('auth.register.backHome')}</span>
         </Link>
 
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm shadow-amber-500/20 group-hover:scale-105 transition-transform">
-            <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-              <Layers className="w-4 h-4 text-amber-600" />
+        {/* Language Switcher & Brand Logo */}
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-full bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-sm shadow-amber-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                <Layers className="w-4 h-4 text-amber-600" />
+              </div>
             </div>
-          </div>
-          <span className="text-base font-bold tracking-tight text-slate-900">
-            Omni<span className="text-amber-600">POS</span>
-          </span>
-        </Link>
+            <span className="text-base font-bold tracking-tight text-slate-900 hidden sm:inline-block">
+              Omni<span className="text-amber-600">POS</span>
+            </span>
+          </Link>
+        </div>
       </header>
 
       {/* Main Content Area: Centered Glass Card */}
@@ -202,13 +209,13 @@ export default function RegisterPage() {
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-amber-700 text-xs font-semibold mb-3">
                 <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>Registrasi Toko Baru</span>
+                <span>{t('auth.register.badge')}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Mulai Toko Cloud POS Anda
+                {t('auth.register.title')}
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed">
-                Buat toko baru dan akun pemilik utama untuk mengaktifkan sistem kasir pintar Anda.
+                {t('auth.register.subtitle')}
               </p>
             </div>
 
@@ -228,19 +235,19 @@ export default function RegisterPage() {
                     1
                   </div>
                   <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
-                    Identitas Toko
+                    {t('auth.register.step1')}
                   </h2>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Nama Toko / Bisnis
+                    {t('auth.register.storeName')}
                   </label>
                   <div className="relative">
                     <Store className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Contoh: Kopi Senja"
+                      placeholder={t('auth.register.storeNamePlaceholder')}
                       value={formData.storeName}
                       onChange={handleStoreNameChange}
                       className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
@@ -257,7 +264,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    URL Slug Toko
+                    {t('auth.register.storeSlug')}
                   </label>
                   <div
                     className={`flex items-center rounded-xl bg-white/80 border shadow-xs overflow-hidden focus-within:ring-2 transition-all ${
@@ -267,7 +274,7 @@ export default function RegisterPage() {
                     }`}
                   >
                     <span className="px-3 py-2.5 text-xs text-slate-400 bg-slate-100/70 border-r border-slate-200/70 select-none font-mono">
-                      omnipos.app/store/
+                      {t('auth.register.slugPrefix')}
                     </span>
                     <input
                       type="text"
@@ -281,7 +288,7 @@ export default function RegisterPage() {
                     <p className="text-[11px] text-rose-600 mt-1 font-medium">{errors.storeSlug}</p>
                   ) : (
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Slug unik untuk subdomain dan partisi database toko Anda.
+                      {t('auth.register.slugHint')}
                     </p>
                   )}
                 </div>
@@ -294,19 +301,19 @@ export default function RegisterPage() {
                     2
                   </div>
                   <h2 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
-                    Akun Pemilik Utama (Owner)
+                    {t('auth.register.step2')}
                   </h2>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Nama Lengkap Pemilik
+                    {t('auth.register.ownerName')}
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Contoh: Kevin"
+                      placeholder={t('auth.register.ownerNamePlaceholder')}
                       value={formData.ownerName}
                       onChange={(e) => handleChange('ownerName', e.target.value)}
                       className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
@@ -323,13 +330,13 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Email Pemilik (Digunakan untuk Login)
+                    {t('auth.register.email')}
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="email"
-                      placeholder="owner@kopisenja.com"
+                      placeholder={t('auth.register.emailPlaceholder')}
                       value={formData.email}
                       onChange={(e) => handleChange('email', e.target.value)}
                       className={`w-full bg-white/80 border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all shadow-xs ${
@@ -347,7 +354,7 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Password (Min. 8 Karakter)
+                      {t('auth.register.password')}
                     </label>
                     <div className="relative">
                       <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -378,7 +385,7 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Konfirmasi Password
+                      {t('auth.register.confirmPassword')}
                     </label>
                     <div className="relative">
                       <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -418,11 +425,11 @@ export default function RegisterPage() {
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Mendaftarkan Toko & Akun...</span>
+                    <span>{t('auth.register.submittingBtn')}</span>
                   </>
                 ) : (
                   <>
-                    <span>Daftarkan Toko Sekarang</span>
+                    <span>{t('auth.register.submitBtn')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -431,12 +438,12 @@ export default function RegisterPage() {
               {/* Bottom Link to Login */}
               <div className="text-center pt-2">
                 <p className="text-xs text-slate-600">
-                  Sudah memiliki akun toko?{' '}
+                  {t('auth.register.alreadyHaveAccount')}{' '}
                   <Link
                     href="/login"
                     className="font-bold text-slate-900 hover:text-amber-700 underline underline-offset-4 decoration-amber-400/60 transition-colors"
                   >
-                    Masuk di sini
+                    {t('auth.register.loginHere')}
                   </Link>
                 </p>
               </div>
@@ -447,7 +454,7 @@ export default function RegisterPage() {
 
       {/* Footer Info */}
       <footer className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-slate-400">
-        <p>© {new Date().getFullYear()} Omni POS Technologies. Seluruh data tenant dilindungi row-level security.</p>
+        <p>© {new Date().getFullYear()} {t('auth.register.footer')}</p>
       </footer>
     </div>
   );
