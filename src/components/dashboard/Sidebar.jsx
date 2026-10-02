@@ -66,6 +66,10 @@ export default function Sidebar({ onCloseMobile }) {
       '/dashboard/settings',
       '/dashboard/users',
       '/dashboard/branches',
+      '/dashboard/products',
+      '/dashboard/pos',
+      '/dashboard/shifts',
+      '/dashboard/transactions',
     ];
 
     if (!activeRoutes.includes(href)) {
@@ -220,14 +224,6 @@ export default function Sidebar({ onCloseMobile }) {
           name: t('dashboard.sidebar.items.products'),
           href: '/dashboard/products',
           icon: Package,
-          badge: null,
-          isLocked: false,
-          permission: 'inventory:view',
-        },
-        {
-          name: t('dashboard.sidebar.items.categories'),
-          href: '/dashboard/categories',
-          icon: Layers,
           badge: null,
           isLocked: false,
           permission: 'inventory:view',
