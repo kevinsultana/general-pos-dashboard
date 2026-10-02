@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Sidebar from '../../components/dashboard/Sidebar';
 import TopNavbar from '../../components/dashboard/TopNavbar';
+import { handleSessionExpired } from '../../lib/alerts';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -15,12 +16,12 @@ export default function DashboardLayout({ children }) {
   const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Proteksi Rute: Jika belum login dan proses validasi selesai, tendang ke /login
+  // Proteksi Rute: Jika belum login dan proses validasi selesai, tampilkan SweetAlert lalu lempar ke /login
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      handleSessionExpired('Sesi login Anda telah habis atau belum terotentikasi. Silakan login kembali.');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated]);
 
   // Proteksi Rute Paket FREE:
   // Akun FREE hanya boleh mengakses Pengaturan Toko (/dashboard/settings) dan Upgrade (/dashboard/upgrade).

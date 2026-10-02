@@ -71,4 +71,43 @@ export const showAlertNotice = async ({
   });
 };
 
+let isHandlingSessionExpired = false;
+
+/**
+ * Dialog SweetAlert2 Notifikasi Sesi Habis & Auto Redirect ke Halaman Login
+ */
+export const handleSessionExpired = (message) => {
+  if (typeof window === 'undefined') return;
+  if (isHandlingSessionExpired) return;
+  if (window.location.pathname === '/login') return;
+
+  // Hanya picu jika pengguna sedang berada di halaman internal dashboard
+  if (!window.location.pathname.startsWith('/dashboard')) return;
+
+  isHandlingSessionExpired = true;
+
+  // Bersihkan data sesi lokal agar fresh saat login kembali
+  localStorage.removeItem('omnipos_token');
+  localStorage.removeItem('omnipos_user');
+  localStorage.removeItem('omnipos_tenant');
+
+  showAlertNotice({
+    title: 'Sesi Telah Habis',
+    text: message || 'Sesi login Anda telah habis atau belum terotentikasi. Silakan login kembali.',
+    icon: 'warning',
+    confirmButtonText: 'Login Sekarang',
+  }).then(() => {
+    isHandlingSessionExpired = false;
+    window.location.href = '/login';
+  });
+
+  // Otomatis arahkan ke /login dalam 2.5 detik jika tombol dialog tidak ditekan
+  setTimeout(() => {
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+    isHandlingSessionExpired = false;
+  }, 2500);
+};
+
 export default GlassSwal;

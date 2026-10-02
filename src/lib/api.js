@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import { showAlertNotice } from './alerts';
+import { showAlertNotice, handleSessionExpired } from './alerts';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -69,6 +69,11 @@ async function request(endpoint, options = {}) {
     error.status = response.status;
     error.data = data;
     error.code = data?.code;
+
+    // Interceptor Global untuk Respon 401 Unauthorized (Sesi habis / Token tidak valid)
+    if (response.status === 401 && !endpoint.includes('/auth/login')) {
+      handleSessionExpired(data?.message);
+    }
 
     // Interceptor Global untuk Respon 403 Forbidden
     if (response.status === 403 && typeof window !== 'undefined') {
