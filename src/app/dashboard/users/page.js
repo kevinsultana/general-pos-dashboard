@@ -30,6 +30,7 @@ import { useLanguage } from "../../../contexts/LanguageContext";
 import api from "../../../lib/api";
 import { showConfirmDialog, showAlertNotice } from "../../../lib/alerts";
 import UnauthorizedState from "../../../components/common/UnauthorizedState";
+import AppSelect from "../../../components/common/AppSelect";
 
 // Master daftar permission RBAC terstandarisasi (8 kategori)
 const DEFAULT_PERMISSION_GROUPS = [
@@ -223,9 +224,16 @@ export default function UsersManagementPage() {
     );
   }, [users, searchQuery]);
 
+  // Peran yang ditampilkan di tab Kelola Peran: OWNER (satu-satunya bawaan sistem) + peran kustom tenant
+  const displayRoles = useMemo(() => {
+    return roles.filter((r) => r.name === "OWNER" || !r.isSystem);
+  }, [roles]);
+
   // Buka modal tambah karyawan baru
   const handleOpenAddUser = () => {
-    const defaultRoleId = roles.find((r) => r.name === "KASIR")?.id || roles[0]?.id || "";
+    // Pilih default role: peran kustom pertama yang tersedia, jika belum ada gunakan role pertama yang bukan OWNER
+    const nonOwnerRoles = roles.filter((r) => r.name !== "OWNER");
+    const defaultRoleId = nonOwnerRoles.find((r) => !r.isSystem)?.id || nonOwnerRoles[0]?.id || "";
     setEditingUser(null);
     setUserFormData({
       name: "",
@@ -716,7 +724,7 @@ export default function UsersManagementPage() {
                 <Shield className="w-3.5 h-3.5" />
                 <span>{t("usersManagement.rolesTab") || "Kelola Peran (Roles)"}</span>
                 <span className="ml-1 px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] text-slate-600 font-bold">
-                  {roles.length}
+                  {displayRoles.length}
                 </span>
               </button>
             )}
@@ -902,8 +910,32 @@ export default function UsersManagementPage() {
           {/* 5. Tab Content: Kelola Peran & Hak Akses (RBAC) */}
           {activeTab === "roles" && (
             <div className="space-y-6">
+              {displayRoles.length === 1 && displayRoles[0]?.name === "OWNER" && (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-300/60 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-amber-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-black text-slate-900">Belum Ada Peran Kustom</p>
+                      <p className="text-[11px] text-slate-500">
+                        Klik tombol <strong>"Tambah Peran Kustom"</strong> di atas untuk membuat peran baru (seperti KASIR, SUPERVISOR, MANAGER) sesuai kebutuhan toko Anda.
+                      </p>
+                    </div>
+                  </div>
+                  {canManageRoles && (
+                    <button
+                      type="button"
+                      onClick={handleOpenAddRole}
+                      className="shrink-0 py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Buat Peran</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {roles.map((roleItem) => {
+                {displayRoles.map((roleItem) => {
                   let perms = roleItem.permissions || [];
                   if (typeof perms === "string") {
                     try {
@@ -1124,23 +1156,38 @@ export default function UsersManagementPage() {
                 </div>
               </div>
 
-              {/* Pilihan Peran (Role Dropdown) */}
+              {/* Pilihan Peran (Role Dropdown) dengan AppSelect */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
                   Peran & Hak Akses <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  value={userFormData.roleId}
-                  onChange={(e) => setUserFormData({ ...userFormData, roleId: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-amber-400 text-xs font-bold text-slate-900 outline-none cursor-pointer"
-                  required
-                >
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name} - {r.description || "Peran"}
-                    </option>
-                  ))}
-                </select>
+                <AppSelect
+                  instanceId="user-role-select"
+                  placeholder="-- Pilih Peran Karyawan --"
+                  options={roles
+                    .filter((r) => r.name !== "OWNER")
+                    .map((r) => ({
+                      value: r.id,
+                      label: `${r.name} - ${r.description || "Peran"}`,
+                    }))}
+                  value={
+                    userFormData.roleId
+                      ? roles
+                          .filter((r) => r.name !== "OWNER")
+                          .map((r) => ({
+                            value: r.id,
+                            label: `${r.name} - ${r.description || "Peran"}`,
+                          }))
+                          .find((opt) => opt.value === userFormData.roleId) || null
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setUserFormData({
+                      ...userFormData,
+                      roleId: selected ? selected.value : "",
+                    })
+                  }
+                />
               </div>
 
               {/* Penugasan Cabang */}

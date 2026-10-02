@@ -27,6 +27,7 @@ import {
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/AuthContext";
 import api from "../../../lib/api";
+import CustomerSelect from "../../../components/common/CustomerSelect";
 
 // ─── Formatter ────────────────────────────────────────────────────────────────
 const fmt = (n) =>
@@ -222,7 +223,7 @@ function VariantPickerModal({ product, onSelect, onClose }) {
 }
 
 // ─── Modal Checkout ────────────────────────────────────────────────────────────
-function CheckoutModal({ cart, shift, onSuccess, onClose }) {
+function CheckoutModal({ cart, shift, selectedCustomer, onSuccess, onClose }) {
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -241,6 +242,9 @@ function CheckoutModal({ cart, shift, onSuccess, onClose }) {
       const res = await api.post("/transactions/checkout", {
         shiftId: shift.id,
         paymentMethod,
+        customerId: selectedCustomer?.customer?.id || null,
+        customerName: selectedCustomer?.customer?.name || (selectedCustomer?.value ? selectedCustomer?.label : null),
+        customerPhone: selectedCustomer?.customer?.phone || null,
         items,
       });
       if (res?.success) {
@@ -277,6 +281,15 @@ function CheckoutModal({ cart, shift, onSuccess, onClose }) {
         <div className="p-6 space-y-5">
           {/* Ringkasan */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+            {/* Info Pelanggan Terpilih */}
+            {selectedCustomer?.value && (
+              <div className="pb-2 mb-2 border-b border-slate-200/80 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-semibold">Pelanggan:</span>
+                <span className="font-extrabold text-amber-800 bg-amber-100/60 px-2 py-0.5 rounded-md">
+                  {selectedCustomer.label}
+                </span>
+              </div>
+            )}
             {cart.map((item) => (
               <div key={item.key} className="flex items-center justify-between text-xs">
                 <span className="text-slate-700 font-semibold">
@@ -387,6 +400,7 @@ export default function POSPage() {
 
   // Cart: [{ key, variantId, productName, variantName, price, costPrice, qty }]
   const [cart, setCart] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   // Modals
   const [variantPickerProduct, setVariantPickerProduct] = useState(null);
@@ -428,6 +442,7 @@ export default function POSPage() {
       // Branch ganti: reset semua state
       setShift(null);
       setCart([]);
+      setSelectedCustomer(null);
       setSearch("");
       setProducts([]);
       prevBranchRef.current = activeBranchId;
@@ -558,7 +573,12 @@ export default function POSPage() {
         <CheckoutModal
           cart={cart}
           shift={shift}
-          onSuccess={() => { setShowCheckout(false); clearCart(); }}
+          selectedCustomer={selectedCustomer}
+          onSuccess={() => {
+            setShowCheckout(false);
+            clearCart();
+            setSelectedCustomer(null);
+          }}
           onClose={() => setShowCheckout(false)}
         />
       )}
@@ -699,6 +719,14 @@ export default function POSPage() {
               Kosongkan
             </button>
           )}
+        </div>
+
+        {/* Pemilih Pelanggan POS */}
+        <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+          <CustomerSelect
+            value={selectedCustomer}
+            onChange={(opt) => setSelectedCustomer(opt)}
+          />
         </div>
 
         {/* List item keranjang */}

@@ -130,9 +130,16 @@ function TransactionRow({ tx, isExpanded, onToggle }) {
 
         {/* Receipt + waktu */}
         <div className="min-w-0">
-          <p className="text-xs font-black text-slate-900 font-mono tracking-tight">
-            {tx.receiptNumber}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-xs font-black text-slate-900 font-mono tracking-tight">
+              {tx.receiptNumber}
+            </p>
+            {(tx.customer?.name || tx.customerName) && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold">
+                {tx.customer?.name || tx.customerName}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 mt-0.5">
             <Clock className="w-3 h-3 text-slate-300 shrink-0" />
             <span className="text-[11px] text-slate-400">{fmtDateTime(tx.createdAt)}</span>
