@@ -114,13 +114,14 @@ const PRESET_OPTIONS = [
 
 export default function OnboardingWizardModal() {
   const { tenant, checkAuth } = useAuth();
+  const onboardingCompleted = tenant?.isOnboardingCompleted || localStorage.getItem('onboardingCompleted') === 'true';
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
   const [selectedPreset, setSelectedPreset] = useState(tenant?.businessPreset || 'RETAIL');
   const [loading, setLoading] = useState(false);
 
   // Jika modal ditutup atau onboarding sudah selesai, jangan render modal
-  if (!isOpen || tenant?.isOnboardingCompleted) {
+  if (!isOpen || tenant?.isOnboardingCompleted || onboardingCompleted) {
     return null;
   }
 
@@ -128,12 +129,15 @@ export default function OnboardingWizardModal() {
     setLoading(true);
     try {
       const res = await api.put('/business-config', {
-        businessPreset: selectedPreset,
-        isOnboardingCompleted: true,
-      });
+          // store completion flag locally to avoid showing wizard after page refresh
+          // server also persists isOnboardingCompleted, but localStorage ensures immediate UI consistency
+          isOnboardingCompleted: true,
+          businessPreset: selectedPreset,
+        });
 
       if (res?.success || res?.data?.success) {
         setIsOpen(false);
+          localStorage.setItem('onboardingCompleted', 'true');
         toast.success(
           `Alur kerja berhasil disesuaikan untuk ${
             PRESET_OPTIONS.find((p) => p.id === selectedPreset)?.title
@@ -157,6 +161,7 @@ export default function OnboardingWizardModal() {
 
   const handleDismiss = () => {
     setIsOpen(false);
+          localStorage.setItem('onboardingCompleted', 'true');
   };
 
   return (
