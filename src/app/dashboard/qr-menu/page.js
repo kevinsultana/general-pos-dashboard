@@ -81,9 +81,15 @@ export default function QrMenuPage() {
   // Pengaturan Teks & Desain
   const [selectedThemeId, setSelectedThemeId] = useState("amber");
   const [title, setTitle] = useState("SCAN UNTUK PESAN");
-  const [subtitle, setSubtitle] = useState("Lihat menu & pesan langsung dari meja Anda");
-  const [footerNote, setFooterNote] = useState("Tunjukkan barcode pesanan ke kasir saat membayar");
-  const [selectedBranchId, setSelectedBranchId] = useState(activeBranch?.id || "");
+  const [subtitle, setSubtitle] = useState(
+    "Lihat menu & pesan langsung dari meja Anda",
+  );
+  const [footerNote, setFooterNote] = useState(
+    "Tunjukkan barcode pesanan ke kasir saat membayar",
+  );
+  const [selectedBranchId, setSelectedBranchId] = useState(
+    activeBranch?.id || "",
+  );
 
   // Mode Meja: Tunggal atau Rentang Meja Banyak
   const [isTableMode, setIsTableMode] = useState(true);
@@ -94,7 +100,8 @@ export default function QrMenuPage() {
 
   const [hasCopied, setHasCopied] = useState(false);
 
-  const selectedTheme = THEMES.find((th) => th.id === selectedThemeId) || THEMES[0];
+  const selectedTheme =
+    THEMES.find((th) => th.id === selectedThemeId) || THEMES[0];
 
   // Base URL domain saat ini
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -116,7 +123,7 @@ export default function QrMenuPage() {
 
   const previewUrl = useMemo(
     () => getOrderUrl(isTableMode ? singleTableNumber : null),
-    [origin, tenantSlug, selectedBranchId, isTableMode, singleTableNumber]
+    [origin, tenantSlug, selectedBranchId, isTableMode, singleTableNumber],
   );
 
   // Daftar nomor meja jika dalam mode batch
@@ -166,7 +173,8 @@ export default function QrMenuPage() {
                 Desainer & Cetak QR Menu Meja
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Kustomisasi kartu standee meja toko Anda dan cetak untuk pemesanan mandiri pelanggan
+                Kustomisasi kartu standee meja toko Anda dan cetak untuk
+                pemesanan mandiri pelanggan
               </p>
             </div>
           </div>
@@ -238,7 +246,9 @@ export default function QrMenuPage() {
                         : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                   >
-                    <p className="text-xs font-black text-slate-900">{theme.name}</p>
+                    <p className="text-xs font-black text-slate-900">
+                      {theme.name}
+                    </p>
                     <div className="flex items-center gap-1.5 mt-2">
                       <span className="w-4 h-4 rounded-full border border-black/10 shadow-2xs inline-block bg-white" />
                       <span
@@ -246,10 +256,10 @@ export default function QrMenuPage() {
                           theme.id === "amber"
                             ? "bg-amber-500"
                             : theme.id === "slate"
-                            ? "bg-slate-900"
-                            : theme.id === "emerald"
-                            ? "bg-emerald-600"
-                            : "bg-slate-400"
+                              ? "bg-slate-900"
+                              : theme.id === "emerald"
+                                ? "bg-emerald-600"
+                                : "bg-slate-400"
                         }`}
                       />
                     </div>
@@ -311,7 +321,9 @@ export default function QrMenuPage() {
             {isTableMode && (
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700">Cetak Banyak Meja Sekaligus?</span>
+                  <span className="text-xs font-bold text-slate-700">
+                    Cetak Banyak Meja Sekaligus?
+                  </span>
                   <button
                     type="button"
                     onClick={() => setIsBatchMode(!isBatchMode)}
@@ -327,7 +339,9 @@ export default function QrMenuPage() {
 
                 {!isBatchMode ? (
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-500">Nomor Meja</label>
+                    <label className="text-[11px] font-bold text-slate-500">
+                      Nomor Meja
+                    </label>
                     <input
                       type="text"
                       value={singleTableNumber}
@@ -339,7 +353,9 @@ export default function QrMenuPage() {
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-500">Mulai Meja</label>
+                      <label className="text-[11px] font-bold text-slate-500">
+                        Mulai Meja
+                      </label>
                       <input
                         type="number"
                         min="1"
@@ -349,7 +365,9 @@ export default function QrMenuPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-500">Sampai Meja</label>
+                      <label className="text-[11px] font-bold text-slate-500">
+                        Sampai Meja
+                      </label>
                       <input
                         type="number"
                         min="1"
@@ -359,7 +377,8 @@ export default function QrMenuPage() {
                       />
                     </div>
                     <p className="col-span-full text-[10px] text-slate-500">
-                      Akan mencetak {batchTables.length} lembar kartu meja siap potong.
+                      Akan mencetak {batchTables.length} lembar kartu meja siap
+                      potong.
                     </p>
                   </div>
                 )}
@@ -377,7 +396,9 @@ export default function QrMenuPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase">Judul Utama</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase">
+                Judul Utama
+              </label>
               <input
                 type="text"
                 value={title}
@@ -388,7 +409,9 @@ export default function QrMenuPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase">Subjudul / Ajakan</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase">
+                Subjudul / Ajakan
+              </label>
               <input
                 type="text"
                 value={subtitle}
@@ -399,7 +422,9 @@ export default function QrMenuPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase">Catatan Kaki Kasir</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase">
+                Catatan Kaki Kasir
+              </label>
               <input
                 type="text"
                 value={footerNote}
@@ -416,7 +441,9 @@ export default function QrMenuPage() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2 text-xs font-black text-slate-600 uppercase tracking-wider">
               <Eye className="w-4 h-4 text-amber-500" />
-              <span>Pratinjau Hasil Cetak Standee (Ukuran Asli Kartu Meja)</span>
+              <span>
+                Pratinjau Hasil Cetak Standee (Ukuran Asli Kartu Meja)
+              </span>
             </div>
             <span className="text-[11px] font-bold text-slate-400">
               Format Siap Potong & Lipat
@@ -426,7 +453,7 @@ export default function QrMenuPage() {
           {/* Wrapper Standee Mockup */}
           <div className="flex justify-center p-6 sm:p-10 rounded-3xl bg-slate-100/70 border border-slate-200/70">
             <div
-              className={`w-full max-w-[340px] rounded-3xl shadow-xl border-4 ${selectedTheme.cardBg} ${selectedTheme.border} overflow-hidden transition-all duration-200 text-center flex flex-col justify-between`}
+              className={`w-full max-w-85 rounded-3xl shadow-xl border-4 ${selectedTheme.cardBg} ${selectedTheme.border} overflow-hidden transition-all duration-200 text-center flex flex-col justify-between`}
             >
               {/* Header Kartu */}
               <div className={`p-4 sm:p-5 ${selectedTheme.headerBg}`}>
@@ -439,7 +466,9 @@ export default function QrMenuPage() {
                 <h2 className="text-base sm:text-lg font-black tracking-tight leading-tight">
                   {title}
                 </h2>
-                <p className="text-[11px] opacity-80 mt-0.5 leading-snug">{subtitle}</p>
+                <p className="text-[11px] opacity-80 mt-0.5 leading-snug">
+                  {subtitle}
+                </p>
               </div>
 
               {/* Badan Kartu (QR Code & Meja) */}
@@ -448,7 +477,10 @@ export default function QrMenuPage() {
                   <div
                     className={`px-4 py-1.5 rounded-full border text-xs font-black uppercase tracking-wider ${selectedTheme.badgeBg}`}
                   >
-                    Nomor Meja: <span className="text-sm font-black">{singleTableNumber}</span>
+                    Nomor Meja:{" "}
+                    <span className="text-sm font-black">
+                      {singleTableNumber}
+                    </span>
                   </div>
                 )}
 
@@ -465,15 +497,21 @@ export default function QrMenuPage() {
                 {/* 3 Langkah Cepat */}
                 <div className="w-full grid grid-cols-3 gap-1 pt-2 border-t border-slate-100 text-[10px] text-slate-500">
                   <div className="space-y-0.5">
-                    <span className="font-extrabold text-slate-800 block text-xs">1. Scan</span>
+                    <span className="font-extrabold text-slate-800 block text-xs">
+                      1. Scan
+                    </span>
                     <span>Buka kamera HP</span>
                   </div>
                   <div className="space-y-0.5">
-                    <span className="font-extrabold text-slate-800 block text-xs">2. Pesan</span>
+                    <span className="font-extrabold text-slate-800 block text-xs">
+                      2. Pesan
+                    </span>
                     <span>Pilih menu favorit</span>
                   </div>
                   <div className="space-y-0.5">
-                    <span className="font-extrabold text-slate-800 block text-xs">3. Kasir</span>
+                    <span className="font-extrabold text-slate-800 block text-xs">
+                      3. Kasir
+                    </span>
                     <span>Bayar pesanan</span>
                   </div>
                 </div>
@@ -482,7 +520,9 @@ export default function QrMenuPage() {
               {/* Footer Kartu */}
               <div className="p-3 bg-slate-50 border-t border-slate-100 text-[10px] text-slate-400 font-medium">
                 <p className="font-bold text-slate-600 mb-0.5">{footerNote}</p>
-                <p className="text-[9px] text-slate-400">Powered by OmniPOS Self-Order System</p>
+                <p className="text-[9px] text-slate-400">
+                  Powered by OmniPOS Self-Order System
+                </p>
               </div>
             </div>
           </div>
@@ -498,7 +538,7 @@ export default function QrMenuPage() {
           return (
             <div
               key={idx}
-              className={`w-full max-w-[340px] mx-auto rounded-3xl border-4 ${selectedTheme.border} overflow-hidden text-center flex flex-col justify-between break-inside-avoid page-break-inside-avoid my-4`}
+              className={`w-full max-w-85 mx-auto rounded-3xl border-4 ${selectedTheme.border} overflow-hidden text-center flex flex-col justify-between break-inside-avoid page-break-inside-avoid my-4`}
               style={{ minHeight: "460px" }}
             >
               {/* Header Kartu */}
@@ -511,7 +551,9 @@ export default function QrMenuPage() {
                 <h2 className="text-base font-black tracking-tight leading-tight">
                   {title}
                 </h2>
-                <p className="text-[10px] opacity-80 mt-0.5 leading-snug">{subtitle}</p>
+                <p className="text-[10px] opacity-80 mt-0.5 leading-snug">
+                  {subtitle}
+                </p>
               </div>
 
               {/* Badan Kartu */}
@@ -520,7 +562,8 @@ export default function QrMenuPage() {
                   <div
                     className={`px-4 py-1 rounded-full border text-xs font-black uppercase tracking-wider ${selectedTheme.badgeBg}`}
                   >
-                    Nomor Meja: <span className="text-base font-black">{tblNum}</span>
+                    Nomor Meja:{" "}
+                    <span className="text-base font-black">{tblNum}</span>
                   </div>
                 )}
 
@@ -535,15 +578,21 @@ export default function QrMenuPage() {
 
                 <div className="w-full grid grid-cols-3 gap-1 pt-2 border-t border-slate-100 text-[9px] text-slate-600">
                   <div>
-                    <span className="font-extrabold text-slate-900 block text-[11px]">1. Scan</span>
+                    <span className="font-extrabold text-slate-900 block text-[11px]">
+                      1. Scan
+                    </span>
                     <span>Buka kamera HP</span>
                   </div>
                   <div>
-                    <span className="font-extrabold text-slate-900 block text-[11px]">2. Pesan</span>
+                    <span className="font-extrabold text-slate-900 block text-[11px]">
+                      2. Pesan
+                    </span>
                     <span>Pilih menu favorit</span>
                   </div>
                   <div>
-                    <span className="font-extrabold text-slate-900 block text-[11px]">3. Kasir</span>
+                    <span className="font-extrabold text-slate-900 block text-[11px]">
+                      3. Kasir
+                    </span>
                     <span>Bayar pesanan</span>
                   </div>
                 </div>
@@ -552,7 +601,9 @@ export default function QrMenuPage() {
               {/* Footer */}
               <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-[9px] text-slate-500">
                 <p className="font-bold text-slate-700">{footerNote}</p>
-                <p className="text-[8px] text-slate-400 mt-0.5">OmniPOS Self-Order</p>
+                <p className="text-[8px] text-slate-400 mt-0.5">
+                  OmniPOS Self-Order
+                </p>
               </div>
             </div>
           );

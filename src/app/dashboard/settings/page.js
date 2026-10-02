@@ -19,6 +19,13 @@ import {
   Mail,
   Save,
   Layers,
+  Printer,
+  Power,
+  Sliders,
+  FileText,
+  CheckCircle2,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -26,6 +33,9 @@ import { useLanguage } from "../../../contexts/LanguageContext";
 import api from "../../../lib/api";
 import { showAlertNotice } from "../../../lib/alerts";
 import UnauthorizedState from "../../../components/common/UnauthorizedState";
+import { useBluetooth, BLE_PROFILES, buildReceiptBytes } from "../../../contexts/BluetoothPrinterContext";
+import BluetoothModal from "../../../components/bluetooth/BluetoothModal";
+import { cn } from "../../../lib/utils";
 
 export default function StoreSettingsPage() {
   const { tenant, user, checkAuth, hasPermission } = useAuth();
@@ -34,6 +44,95 @@ export default function StoreSettingsPage() {
   const [storeName, setStoreName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // ─── Bluetooth Thermal Printer Context & Preferences ───────────────────────
+  const {
+    btStatus,
+    btDeviceName,
+    btServiceUuid,
+    setBtServiceUuid,
+    btErrorMsg,
+    isConnected,
+    isReconnecting,
+    connect,
+    disconnect,
+    printBytes,
+  } = useBluetooth();
+
+  const [showBtModal, setShowBtModal] = useState(false);
+  const [printerWidth, setPrinterWidth] = useState(58);
+  const [receiptFontSize, setReceiptFontSize] = useState("NORMAL");
+  const [isTestPrinting, setIsTestPrinting] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedWidth = localStorage.getItem("omnipos_printer_width");
+      if (savedWidth) setPrinterWidth(Number(savedWidth));
+      const savedFont = localStorage.getItem("omnipos_receipt_font_size");
+      if (savedFont) setReceiptFontSize(savedFont);
+    } catch {}
+  }, []);
+
+  const handleSetPrinterWidth = (w) => {
+    setPrinterWidth(w);
+    try {
+      localStorage.setItem("omnipos_printer_width", String(w));
+      toast.success(`Format lebar kertas diatur ke ${w}mm`);
+    } catch {}
+  };
+
+  const handleSetReceiptFontSize = (sz) => {
+    setReceiptFontSize(sz);
+    try {
+      localStorage.setItem("omnipos_receipt_font_size", sz);
+      toast.success(`Ukuran font struk diatur ke ${sz}`);
+    } catch {}
+  };
+
+  const handleTestPrintSettings = async () => {
+    if (!isConnected) {
+      toast.error("Printer belum terhubung. Hubungkan printer terlebih dahulu.");
+      return;
+    }
+    setIsTestPrinting(true);
+    const toastId = toast.loading("Mengirim data struk uji coba ke printer...");
+    try {
+      const testOrder = {
+        receiptNumber: "TEST-" + Date.now().toString().slice(-4),
+        createdAt: new Date().toISOString(),
+        customerName: "Uji Coba Pengaturan",
+        cashierName: user?.name || "Kasir",
+        orderType: "DINE_IN",
+        items: [
+          {
+            productName: "KONEKSI THERMAL PRINTER",
+            variantName: `${printerWidth}mm / Font ${receiptFontSize}`,
+            quantity: 1,
+            price: 0,
+            subtotal: 0,
+            notes: "Web Bluetooth BLE Status OK",
+          },
+        ],
+        totalAmount: 0,
+        paymentMethod: "CASH",
+        cashReceived: 0,
+        changeAmount: 0,
+      };
+      const activeStore = {
+        name: tenant?.name || "OMNI POS",
+        printerWidth,
+        receiptFontSize,
+        address: "Cabang Utama",
+      };
+      const bytes = await buildReceiptBytes(testOrder, activeStore, "CUSTOMER");
+      await printBytes(bytes);
+      toast.success("Struk percobaan berhasil dicetak!", { id: toastId });
+    } catch (err) {
+      toast.error("Gagal mencetak: " + (err.message || "Cek printer."), { id: toastId });
+    } finally {
+      setIsTestPrinting(false);
+    }
+  };
 
   // Proteksi Hak Akses (settings:view untuk melihat, settings:manage untuk mengubah)
   const isAllowed = user?.isOwner || hasPermission("settings:view");
@@ -333,6 +432,219 @@ export default function StoreSettingsPage() {
         </div>
       </div>
 
+      {/* Kartu Pengaturan Koneksi Thermal Printer */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/70 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-black shadow-2xs">
+              <Printer className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900 leading-tight">
+                Koneksi & Pengaturan Thermal Printer
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Kelola sambungan Bluetooth printer thermal, format ukuran kertas struk, dan uji cetak.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowBtModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer self-start sm:self-auto"
+          >
+            <Sliders className="w-3.5 h-3.5 text-amber-400" />
+            <span>Kelola Bluetooth</span>
+          </button>
+        </div>
+
+        {/* Real-time Connection Status Banner */}
+        <div
+          className={cn(
+            "p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+            isConnected
+              ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
+              : isReconnecting
+              ? "bg-amber-50/80 border-amber-200 text-amber-900"
+              : "bg-slate-50/80 border-slate-200/80 text-slate-700"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "w-3 h-3 rounded-full shrink-0",
+                isConnected
+                  ? "bg-emerald-500 animate-pulse ring-4 ring-emerald-100"
+                  : isReconnecting
+                  ? "bg-amber-500 animate-pulse ring-4 ring-amber-100"
+                  : "bg-slate-300 ring-4 ring-slate-100"
+              )}
+            />
+            <div>
+              <p className="text-xs font-black text-slate-900">
+                {isConnected
+                  ? `Printer Terhubung: ${btDeviceName || "Thermal Printer"}`
+                  : isReconnecting
+                  ? "Menghubungkan Ulang ke Printer..."
+                  : "Printer Bluetooth Belum Terhubung"}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                {isConnected
+                  ? `GATT Service: ${btServiceUuid}`
+                  : "Nyalakan Bluetooth printer thermal dan klik tombol hubungkan."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {isConnected ? (
+              <button
+                type="button"
+                onClick={disconnect}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-rose-200 text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              >
+                <Power className="w-3.5 h-3.5" />
+                <span>Putuskan</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowBtModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs flex items-center gap-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Hubungkan Printer</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Setting Parameters Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Lebar Kertas Struk (58mm vs 80mm) */}
+          <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 space-y-3">
+            <div>
+              <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-amber-600" />
+                <span>Lebar Kertas Thermal</span>
+              </label>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Pilih ukuran roll kertas printer thermal yang Anda gunakan.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleSetPrinterWidth(58)}
+                className={cn(
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer",
+                  printerWidth === 58
+                    ? "bg-amber-500/10 border-amber-400/80 text-amber-950 font-black shadow-2xs"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black">58 mm</span>
+                  {printerWidth === 58 && <Check className="w-3.5 h-3.5 text-amber-600" />}
+                </div>
+                <p className="text-[10px] text-slate-400 font-normal mt-1">
+                  Standar POS Portabel (32 char)
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetPrinterWidth(80)}
+                className={cn(
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer",
+                  printerWidth === 80
+                    ? "bg-amber-500/10 border-amber-400/80 text-amber-950 font-black shadow-2xs"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black">80 mm</span>
+                  {printerWidth === 80 && <Check className="w-3.5 h-3.5 text-amber-600" />}
+                </div>
+                <p className="text-[10px] text-slate-400 font-normal mt-1">
+                  Printer Kasir Resto (48 char)
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Ukuran Font Struk */}
+          <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 space-y-3">
+            <div>
+              <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-amber-600" />
+                <span>Ukuran Karakter Struk</span>
+              </label>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Kerapatan huruf ESC/POS yang dicetak ke struk.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: "CONDENSED", label: "Rapat", desc: "Font B" },
+                { id: "NORMAL", label: "Normal", desc: "Font A" },
+                { id: "LARGE", label: "Besar", desc: "Font 2X" },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleSetReceiptFontSize(opt.id)}
+                  className={cn(
+                    "p-2.5 rounded-xl border text-center transition-all cursor-pointer",
+                    receiptFontSize === opt.id
+                      ? "bg-amber-500/10 border-amber-400/80 text-amber-950 font-black shadow-2xs"
+                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold"
+                  )}
+                >
+                  <p className="text-xs font-black">{opt.label}</p>
+                  <p className="text-[9px] text-slate-400 font-normal">{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Profil Layanan BLE & Uji Cetak */}
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-500">Profil UUID BLE:</span>
+            <select
+              value={btServiceUuid}
+              onChange={(e) => setBtServiceUuid(e.target.value)}
+              className="text-xs font-mono font-bold bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-800 shadow-2xs focus:ring-2 focus:ring-amber-500 focus:outline-hidden cursor-pointer"
+            >
+              {BLE_PROFILES.map((p) => (
+                <option key={p.serviceUuid} value={p.serviceUuid}>
+                  {p.label} ({p.serviceUuid})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleTestPrintSettings}
+            disabled={isTestPrinting || !isConnected}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isTestPrinting ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Printer className="w-3.5 h-3.5" />
+            )}
+            <span>Cetak Struk Uji Coba</span>
+          </button>
+        </div>
+      </div>
+
       {/* 3. Kartu Rincian Langganan Toko (Data Real dari Database) */}
       <div className="p-6 sm:p-8 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/70 space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -521,6 +833,19 @@ export default function StoreSettingsPage() {
           </Link>
         </div>
       )}
+
+      {/* Modal Pengaturan Bluetooth Printer */}
+      <BluetoothModal
+        isOpen={showBtModal}
+        onClose={() => setShowBtModal(false)}
+        userName={user?.name || "Kasir"}
+        storeInfo={{
+          name: tenant?.name || "OMNI POS",
+          address: "Cabang Utama",
+          printerWidth,
+          receiptFontSize,
+        }}
+      />
     </div>
   );
 }

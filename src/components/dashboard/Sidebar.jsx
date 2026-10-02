@@ -35,6 +35,34 @@ export default function Sidebar({ onCloseMobile }) {
 
   const isFreePlan = tenant?.plan === 'FREE';
 
+  const getPlanBadge = (plan) => {
+    switch (plan) {
+      case 'PRO':
+        return {
+          label: t('dashboard.planPro') || 'Paket PRO',
+          classes:
+            'bg-purple-50 text-purple-700 border-purple-200 shadow-purple-500/10 font-black',
+          dot: 'bg-purple-500',
+        };
+      case 'PLUS':
+        return {
+          label: t('dashboard.planPlus') || 'Paket PLUS',
+          classes:
+            'bg-amber-50 text-amber-700 border-amber-200 shadow-amber-500/10 font-black',
+          dot: 'bg-amber-500',
+        };
+      default:
+        return {
+          label: t('dashboard.planFree') || 'Paket FREE',
+          classes:
+            'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-emerald-500/10 font-bold',
+          dot: 'bg-emerald-500',
+        };
+    }
+  };
+
+  const planBadge = getPlanBadge(tenant?.plan);
+
   const handleLogout = async () => {
     const result = await confirmLogout({
       title: t('dashboard.logoutPromptTitle'),
@@ -356,23 +384,15 @@ export default function Sidebar({ onCloseMobile }) {
               </div>
             </Link>
 
-            {/* Cloud Sync Status / Plan Status Pill */}
+            {/* Plan Badge Pill untuk Menandakan Paket Tenant */}
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold shadow-2xs ${
-                isFreePlan
-                  ? 'bg-amber-50/80 border-amber-200/70 text-amber-700'
-                  : 'bg-emerald-50/80 border-emerald-200/70 text-emerald-700'
-              }`}
-              title={isFreePlan ? 'Paket FREE: Mobile POS Offline' : t('common.cloudSyncActive')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-extrabold uppercase tracking-wider shadow-2xs ${planBadge.classes}`}
+              title={`Paket Langganan Tenant: ${planBadge.label}`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isFreePlan ? 'bg-amber-500' : 'bg-emerald-500'
-                } animate-pulse`}
+                className={`w-1.5 h-1.5 rounded-full ${planBadge.dot} animate-pulse`}
               />
-              <span className="hidden sm:inline">
-                {isFreePlan ? 'FREE' : t('common.online')}
-              </span>
+              <span>{planBadge.label}</span>
             </div>
           </div>
 

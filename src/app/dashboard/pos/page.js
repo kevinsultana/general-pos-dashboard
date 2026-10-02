@@ -30,11 +30,18 @@ import {
   Phone,
   FileText,
   Pencil,
+  Printer,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/AuthContext";
 import api from "../../../lib/api";
 import CustomerSelect from "../../../components/common/CustomerSelect";
+import { useBluetooth, buildReceiptBytes } from "../../../contexts/BluetoothPrinterContext";
+import BluetoothModal from "../../../components/bluetooth/BluetoothModal";
+import ThermalReceipt from "../../../components/pos/ThermalReceipt";
+import TransactionSuccessModal from "../../../components/pos/TransactionSuccessModal";
+import { cn } from "../../../lib/utils";
 
 // ─── Formatter ────────────────────────────────────────────────────────────────
 const fmt = (n) =>
@@ -239,6 +246,7 @@ function VariantPickerModal({ product, onSelect, onClose }) {
 // ─── Modal Checkout ────────────────────────────────────────────────────────────
 function CheckoutModal({ cart, shift, selectedCustomer, activeOrder, onSuccess, onClose }) {
   const [paymentMethod, setPaymentMethod] = useState(null);
+  const [cashReceived, setCashReceived] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -265,8 +273,15 @@ function CheckoutModal({ cart, shift, selectedCustomer, activeOrder, onSuccess, 
         items,
       });
       if (res?.success) {
+        const receivedVal = paymentMethod === "CASH" ? (parseFloat(cashReceived) || total) : total;
+        const changeVal = paymentMethod === "CASH" ? Math.max(0, receivedVal - total) : 0;
         toast.success(`Transaksi ${res.data.receiptNumber} berhasil!`);
-        onSuccess(res.data);
+        onSuccess({
+          transaction: res.data,
+          paymentMethod,
+          cashReceived: receivedVal,
+          changeAmount: changeVal,
+        });
       }
     } catch (err) {
       toast.error(err.message || "Checkout gagal.");
@@ -367,6 +382,51 @@ function CheckoutModal({ cart, shift, selectedCustomer, activeOrder, onSuccess, 
               })}
             </div>
           </div>
+
+          {/* Input Tunai jika CASH */}
+          {paymentMethod === "CASH" && (
+            <div className="space-y-2 p-3 rounded-2xl bg-amber-50/70 border border-amber-200">
+              <label className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block">
+                Uang Tunai Diterima (Rp)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={formatRibuan(cashReceived)}
+                onChange={(e) => setCashReceived(e.target.value.replace(/\D/g, ""))}
+                placeholder={`Uang Pas (${fmt(total)})`}
+                className="w-full px-3 py-2 rounded-xl bg-white border border-amber-300 focus:border-amber-500 text-sm font-extrabold text-slate-800 outline-none transition-all"
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setCashReceived(String(total))}
+                  className="px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-300 text-[10px] font-bold text-amber-900 transition-colors cursor-pointer"
+                >
+                  Uang Pas
+                </button>
+                {[50000, 100000, 200000].map(
+                  (nominal) =>
+                    nominal >= total && (
+                      <button
+                        key={nominal}
+                        type="button"
+                        onClick={() => setCashReceived(String(nominal))}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-amber-200 hover:bg-amber-100 text-[10px] font-bold text-slate-700 transition-colors cursor-pointer"
+                      >
+                        {new Intl.NumberFormat("id-ID").format(nominal)}
+                      </button>
+                    )
+                )}
+              </div>
+              <div className="pt-2 border-t border-amber-200/80 flex items-center justify-between text-xs">
+                <span className="font-bold text-amber-900">Kembalian:</span>
+                <span className="font-black text-amber-950 text-sm">
+                  {fmt(Math.max(0, (Number(cashReceived) || total) - total))}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Tombol Bayar */}
           <button
@@ -702,7 +762,8 @@ function ProductCard({ product, onClick }) {
 
 // ─── Halaman POS ──────────────────────────────────────────────────────────────
 export default function POSPage() {
-  const { user, activeBranch, activeBranchId, hasPermission } = useAuth();
+  const { user, tenant, activeBranch, activeBranchId, hasPermission } = useAuth();
+  const { btStatus, btDeviceName, isConnected, isReconnecting, printBytes } = useBluetooth();
 
   const [shift, setShift] = useState(null);
   const [shiftLoading, setShiftLoading] = useState(true);
@@ -726,6 +787,57 @@ export default function POSPage() {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [showOrderScannerModal, setShowOrderScannerModal] = useState(false);
   const [activeOrder, setActiveOrder] = useState(null);
+
+  // Bluetooth Thermal Printer & Receipt State
+  const [showBluetoothModal, setShowBluetoothModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [activePrintOrder, setActivePrintOrder] = useState(null);
+  const [printMode, setPrintMode] = useState("CUSTOMER");
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const storeInfo = {
+    name: tenant?.name || activeBranch?.name || "OMNI POS",
+    address: activeBranch?.address || "Cabang Utama",
+    phone: activeBranch?.phone || "",
+    printerWidth: 58,
+    branchName: activeBranch?.name,
+    receiptShowStoreName: true,
+  };
+
+  const handlePrintBluetooth = async (orderData, mode = "CUSTOMER") => {
+    if (!orderData) return;
+    if (!isConnected) {
+      setShowBluetoothModal(true);
+      return;
+    }
+
+    setIsPrinting(true);
+    const toastId = toast.loading(
+      `Mengirim ${mode === "KITCHEN" ? "tiket dapur" : "struk"} ke printer Bluetooth...`
+    );
+    try {
+      const bytes = await buildReceiptBytes(orderData, storeInfo, mode);
+      await printBytes(bytes);
+      toast.success(
+        `${mode === "KITCHEN" ? "Tiket dapur" : "Struk pelanggan"} berhasil dicetak!`,
+        { id: toastId }
+      );
+    } catch (err) {
+      toast.error(`Gagal mencetak: ${err.message || "Cek koneksi printer."}`, { id: toastId });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handlePrintBrowser = (orderData, mode = "CUSTOMER") => {
+    if (!orderData) return;
+    setActivePrintOrder(orderData);
+    setPrintMode(mode);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
 
   // ── Fetch shift aktif ──────────────────────────────────────────────────────
   const fetchActiveShift = useCallback(async () => {
@@ -995,8 +1107,45 @@ export default function POSPage() {
           shift={shift}
           selectedCustomer={selectedCustomer}
           activeOrder={activeOrder}
-          onSuccess={() => {
+          onSuccess={(checkoutInfo) => {
             setShowCheckout(false);
+            const completedOrderData = {
+              receiptNumber:
+                checkoutInfo.transaction?.receiptNumber ||
+                `TRX-${Date.now().toString().slice(-6)}`,
+              createdAt:
+                checkoutInfo.transaction?.createdAt || new Date().toISOString(),
+              tableNumber: activeOrder?.tableNumber || null,
+              orderType:
+                activeOrder?.orderType ||
+                (activeOrder?.tableNumber ? "DINE_IN" : "TAKEAWAY"),
+              cashierName: user?.name || "Kasir",
+              customerName:
+                selectedCustomer?.customer?.name ||
+                (selectedCustomer?.value
+                  ? selectedCustomer?.label
+                  : activeOrder?.customerName || "Umum"),
+              customerPhone:
+                selectedCustomer?.customer?.phone ||
+                activeOrder?.customerPhone ||
+                null,
+              items: cart.map((item) => ({
+                productName: item.productName,
+                variantName: item.variantName,
+                quantity: item.qty,
+                price: item.price,
+                subtotal: item.price * item.qty,
+                notes: item.notes || "",
+              })),
+              totalAmount:
+                checkoutInfo.transaction?.totalAmount || cartTotal,
+              paymentMethod: checkoutInfo.paymentMethod,
+              cashReceived: checkoutInfo.cashReceived,
+              changeAmount: checkoutInfo.changeAmount,
+            };
+            setCompletedOrder(completedOrderData);
+            setActivePrintOrder(completedOrderData);
+            setShowSuccessModal(true);
             clearCart();
             setSelectedCustomer(null);
             setActiveOrder(null);
@@ -1078,6 +1227,42 @@ export default function POSPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Tombol Bluetooth Thermal Printer */}
+            <button
+              type="button"
+              onClick={() => setShowBluetoothModal(true)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border shadow-xs active:scale-95 cursor-pointer",
+                isConnected
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                  : isReconnecting
+                  ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                  : "bg-white/90 text-slate-700 border-slate-200 hover:bg-slate-100"
+              )}
+              title="Pengaturan Koneksi Printer Bluetooth"
+            >
+              <Printer
+                className={cn(
+                  "w-4 h-4",
+                  isConnected
+                    ? "text-emerald-600"
+                    : isReconnecting
+                    ? "text-amber-600 animate-spin"
+                    : "text-slate-500"
+                )}
+              />
+              <span className="hidden sm:inline">
+                {isConnected
+                  ? btDeviceName || "Printer Siap"
+                  : isReconnecting
+                  ? "Reconnecting..."
+                  : "Printer"}
+              </span>
+              {isConnected && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </button>
+
             <button
               type="button"
               onClick={() => setShowOrderScannerModal(true)}
@@ -1362,6 +1547,39 @@ export default function POSPage() {
           )}
         </div>
       </div>
+
+      {/* ── Modal: Transaksi Sukses & Cetak Struk ── */}
+      <TransactionSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        orderData={completedOrder}
+        storeInfo={storeInfo}
+        onPrintBluetooth={handlePrintBluetooth}
+        onPrintBrowser={handlePrintBrowser}
+        isPrinting={isPrinting}
+        isConnected={isConnected}
+        onOpenBluetoothModal={() => setShowBluetoothModal(true)}
+      />
+
+      {/* ── Modal: Koneksi Bluetooth Printer ── */}
+      <BluetoothModal
+        isOpen={showBluetoothModal}
+        onClose={() => setShowBluetoothModal(false)}
+        userName={user?.name || "Kasir"}
+        storeInfo={storeInfo}
+        onConnectedContinue={
+          showSuccessModal && completedOrder
+            ? () => handlePrintBluetooth(completedOrder, "CUSTOMER")
+            : undefined
+        }
+      />
+
+      {/* ── Wadah Struk Thermal untuk Browser Native Print (@media print) ── */}
+      <ThermalReceipt
+        order={activePrintOrder}
+        store={storeInfo}
+        printMode={printMode}
+      />
     </div>
   );
 }

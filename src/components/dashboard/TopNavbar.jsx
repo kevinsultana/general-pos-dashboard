@@ -12,12 +12,15 @@ import {
   ChevronDown,
   Check,
   GitBranch,
+  Printer,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import LanguageSwitcher from "../common/LanguageSwitcher";
+import { useBluetooth } from "../../contexts/BluetoothPrinterContext";
+import BluetoothModal from "../bluetooth/BluetoothModal";
 import { confirmLogout } from "../../lib/alerts";
 import api from "../../lib/api";
 
@@ -34,7 +37,9 @@ export default function TopNavbar({ onToggleMobile }) {
     hasPermission,
   } = useAuth();
   const { t } = useLanguage();
+  const { isConnected, isReconnecting, btDeviceName } = useBluetooth();
 
+  const [isPrinterModalOpen, setIsPrinterModalOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [branchList, setBranchList] = useState([]);
@@ -127,34 +132,6 @@ export default function TopNavbar({ onToggleMobile }) {
       error: "Sync error",
     });
   };
-
-  const getPlanBadge = (plan) => {
-    switch (plan) {
-      case "PRO":
-        return {
-          label: t("dashboard.planPro"),
-          classes:
-            "bg-purple-50 text-purple-700 border-purple-200 shadow-purple-500/10",
-          dot: "bg-purple-500",
-        };
-      case "PLUS":
-        return {
-          label: t("dashboard.planPlus"),
-          classes:
-            "bg-amber-50 text-amber-700 border-amber-200 shadow-amber-500/10",
-          dot: "bg-amber-500",
-        };
-      default:
-        return {
-          label: t("dashboard.planFree"),
-          classes:
-            "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-emerald-500/10",
-          dot: "bg-emerald-500",
-        };
-    }
-  };
-
-  const planBadge = getPlanBadge(tenant?.plan);
 
   return (
     <header className="sticky top-4 z-30 w-full mb-6">
@@ -287,21 +264,47 @@ export default function TopNavbar({ onToggleMobile }) {
                 </div>
               )}
             </div>
-
-            {/* Plan Badge Pill */}
-            <div
-              className={`hidden sm:flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full border uppercase tracking-wider shadow-2xs ${planBadge.classes}`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${planBadge.dot} animate-pulse`}
-              />
-              <span>{planBadge.label}</span>
-            </div>
           </div>
         </div>
 
-        {/* Right Side: Language Switcher, Cloud Sync, User Profile */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Side: Printer Shortcut, Language Switcher, Cloud Sync, User Profile */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Thermal Printer Bluetooth Shortcut Button */}
+          <button
+            type="button"
+            onClick={() => setIsPrinterModalOpen(true)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-2xs ${
+              isConnected
+                ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                : isReconnecting
+                ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                : "bg-white/70 text-slate-600 hover:text-slate-900 border-slate-200/70 hover:bg-white/95"
+            }`}
+            title={
+              isConnected
+                ? `Printer Terhubung: ${btDeviceName || "Bluetooth Printer"}`
+                : "Koneksi Thermal Printer Bluetooth"
+            }
+          >
+            <Printer
+              className={`w-3.5 h-3.5 ${
+                isConnected
+                  ? "text-emerald-600"
+                  : isReconnecting
+                  ? "text-amber-600 animate-spin"
+                  : "text-slate-500"
+              }`}
+            />
+            <span className="hidden xl:inline text-[11px] font-extrabold truncate max-w-28">
+              {isConnected ? btDeviceName || "Printer Siap" : "Printer"}
+            </span>
+            {isConnected ? (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            ) : isReconnecting ? (
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            ) : null}
+          </button>
+
           {/* Language Switcher */}
           <LanguageSwitcher />
 
@@ -361,6 +364,20 @@ export default function TopNavbar({ onToggleMobile }) {
           </div>
         </div>
       </div>
+
+      {/* Modal Koneksi Thermal Printer Bluetooth Global */}
+      <BluetoothModal
+        isOpen={isPrinterModalOpen}
+        onClose={() => setIsPrinterModalOpen(false)}
+        userName={user?.name || "Kasir"}
+        storeInfo={{
+          name: tenant?.name || activeBranch?.name || "OMNI POS",
+          address: activeBranch?.address || "Cabang Utama",
+          phone: activeBranch?.phone || "",
+          printerWidth: 58,
+          branchName: activeBranch?.name,
+        }}
+      />
     </header>
   );
 }
