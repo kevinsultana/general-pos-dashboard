@@ -19,6 +19,7 @@ import { useLanguage } from "../../../contexts/LanguageContext";
 import api from "../../../lib/api";
 import { showAlertNotice } from "../../../lib/alerts";
 import UnauthorizedState from "../../../components/common/UnauthorizedState";
+import { cn } from "../../../lib/utils";
 
 export default function UpgradePage() {
   const router = useRouter();
@@ -208,27 +209,19 @@ export default function UpgradePage() {
             {t("upgrade.subtitle")}
           </p>
 
-          {/* 2. Billing Cycle Cyber-Glass Toggle (Bulanan vs Tahunan) */}
+          {/* 2. Billing Cycle Toggle (Bulanan vs Tahunan) */}
           <div className="pt-4 flex justify-center">
-            <div className="relative inline-flex items-center p-1.5 rounded-full bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] ring-1 ring-inset ring-white/60 select-none">
-              {/* Sliding Pill Indicator */}
-              <div
-                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full bg-slate-900 shadow-md transition-all duration-300 ease-out pointer-events-none ${
-                  billingCycle === "monthly"
-                    ? "left-1.5"
-                    : "left-[calc(50%+1.5px)]"
-                }`}
-              />
-
+            <div className="inline-flex items-center gap-1 p-1.5 rounded-full bg-white/80 backdrop-blur-xl border border-white/90 shadow-md ring-1 ring-inset ring-slate-100 select-none">
               {/* Monthly Option */}
               <button
                 type="button"
                 onClick={() => setBillingCycle("monthly")}
-                className={`relative z-10 px-5 py-2 rounded-full text-xs font-extrabold transition-colors duration-200 cursor-pointer ${
+                className={cn(
+                  "px-5 py-2.5 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap",
                   billingCycle === "monthly"
-                    ? "text-white"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
+                    ? "bg-slate-900 text-white shadow-md shadow-slate-900/15"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                )}
               >
                 {t("upgrade.billingMonthly")}
               </button>
@@ -237,19 +230,21 @@ export default function UpgradePage() {
               <button
                 type="button"
                 onClick={() => setBillingCycle("yearly")}
-                className={`relative z-10 flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-extrabold transition-colors duration-200 cursor-pointer ${
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap",
                   billingCycle === "yearly"
-                    ? "text-white"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
+                    ? "bg-slate-900 text-white shadow-md shadow-slate-900/15"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                )}
               >
                 <span>{t("upgrade.billingYearly")}</span>
                 <span
-                  className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${
+                  className={cn(
+                    "text-[10px] font-black px-2 py-0.5 rounded-full transition-colors shrink-0",
                     billingCycle === "yearly"
                       ? "bg-amber-400 text-slate-950 shadow-2xs"
                       : "bg-amber-100 text-amber-800"
-                  }`}
+                  )}
                 >
                   {t("upgrade.saveBadge")}
                 </span>
