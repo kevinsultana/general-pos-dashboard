@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   RefreshCw,
   AlertTriangle,
+  Coins,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -64,14 +65,32 @@ export default function StoreSettingsPage() {
   const [receiptFontSize, setReceiptFontSize] = useState("NORMAL");
   const [isTestPrinting, setIsTestPrinting] = useState(false);
 
+  // ─── Pengaturan Pembulatan Total Transaksi ────────────────────────────────────
+  // Nilai: 0 = tidak dibulatkan, 100 | 500 | 1000 = dibulatkan ke kelipatan terdekat
+  const [roundingMode, setRoundingMode] = useState(0);
+
   useEffect(() => {
     try {
       const savedWidth = localStorage.getItem("omnipos_printer_width");
       if (savedWidth) setPrinterWidth(Number(savedWidth));
       const savedFont = localStorage.getItem("omnipos_receipt_font_size");
       if (savedFont) setReceiptFontSize(savedFont);
+      const savedRounding = localStorage.getItem("omnipos_rounding_mode");
+      if (savedRounding !== null) setRoundingMode(Number(savedRounding));
     } catch {}
   }, []);
+
+  const handleSetRoundingMode = (mode) => {
+    setRoundingMode(mode);
+    try {
+      localStorage.setItem("omnipos_rounding_mode", String(mode));
+      toast.success(
+        mode === 0
+          ? "Pembulatan dinonaktifkan — total tampil apa adanya."
+          : `Total transaksi akan dibulatkan ke kelipatan Rp ${new Intl.NumberFormat("id-ID").format(mode)} terdekat.`
+      );
+    } catch {}
+  };
 
   const handleSetPrinterWidth = (w) => {
     setPrinterWidth(w);
@@ -645,7 +664,101 @@ export default function StoreSettingsPage() {
         </div>
       </div>
 
-      {/* 3. Kartu Rincian Langganan Toko (Data Real dari Database) */}
+      {/* 3. Kartu Pengaturan Pembulatan Total Transaksi */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/70 space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center shadow-2xs">
+            <Coins className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-slate-900 leading-tight">
+              Pembulatan Total Transaksi (Kasir POS)
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Sesuaikan total bayar dengan pecahan uang rupiah yang beredar agar kembalian selalu bulat.
+            </p>
+          </div>
+        </div>
+
+        {/* Info Pecahan Rupiah */}
+        <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex flex-wrap gap-1.5 items-center">
+          <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider shrink-0">
+            Pecahan Rupiah Beredar:
+          </span>
+          {[100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000].map((p) => (
+            <span
+              key={p}
+              className="px-2 py-0.5 rounded-md bg-white border border-amber-200 text-[10px] font-black text-amber-900"
+            >
+              {new Intl.NumberFormat("id-ID").format(p)}
+            </span>
+          ))}
+        </div>
+
+        {/* Pilihan Pembulatan */}
+        <div className="space-y-3">
+          <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">
+            Atur Pembulatan Total Bayar
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { value: 0, label: "Tanpa Bulatkan", desc: "Total tampil apa adanya", example: "Rp 12.350" },
+              { value: 100, label: "Ke ×100", desc: "Bulatkan ke Rp 100", example: "Rp 12.400" },
+              { value: 500, label: "Ke ×500", desc: "Bulatkan ke Rp 500", example: "Rp 12.500" },
+              { value: 1000, label: "Ke ×1.000", desc: "Bulatkan ke Rp 1.000", example: "Rp 13.000" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleSetRoundingMode(opt.value)}
+                className={cn(
+                  "p-3 rounded-2xl border text-left transition-all cursor-pointer space-y-1",
+                  roundingMode === opt.value
+                    ? "bg-amber-500/10 border-amber-400/80 shadow-2xs"
+                    : "bg-white border-slate-200 hover:bg-slate-50"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-black ${roundingMode === opt.value ? "text-amber-950" : "text-slate-700"}`}>
+                    {opt.label}
+                  </span>
+                  {roundingMode === opt.value && (
+                    <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-400 font-normal">{opt.desc}</p>
+                <p className={`text-[10px] font-black font-mono ${roundingMode === opt.value ? "text-amber-700" : "text-slate-500"}`}>
+                  {opt.example}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {/* Preview live pembulatan */}
+          <div className="p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-semibold">Contoh: Subtotal Rp 12.350</span>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-500 line-through font-mono">Rp 12.350</span>
+              <span className="text-amber-300 font-black font-mono">
+                →{" "}
+                {roundingMode === 0
+                  ? "Rp 12.350"
+                  : `Rp ${new Intl.NumberFormat("id-ID").format(
+                      Math.ceil(12350 / roundingMode) * roundingMode
+                    )}`}
+              </span>
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400">
+            Pengaturan ini disimpan di perangkat kasir ini dan berlaku langsung di terminal POS.
+            Pembulatan ke atas menggunakan{" "}
+            <span className="font-bold text-slate-600">Math.ceil</span> agar total tidak pernah lebih
+            kecil dari harga asli.
+          </p>
+        </div>
+      </div>
+
+      {/* 4. Kartu Rincian Langganan Toko (Data Real dari Database) */}
       <div className="p-6 sm:p-8 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/70 space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">

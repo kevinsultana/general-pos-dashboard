@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { cn, formatRupiah, formatDateTime } from '@/lib/utils';
+import React from "react";
+import { cn, formatRupiah, formatDateTime } from "@/lib/utils";
 
 /**
  * Komponen Khusus Pencetakan Struk Thermal (58mm / 80mm).
@@ -13,51 +13,59 @@ import { cn, formatRupiah, formatDateTime } from '@/lib/utils';
  * @param {Object} props.store - Objek Informasi Toko (name, logoUrl, printerWidth, address, dll)
  * @param {'CUSTOMER'|'KITCHEN'} props.printMode - Mode cetak ('CUSTOMER' atau 'KITCHEN')
  */
-export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOMER' }) {
+export default function ThermalReceipt({
+  order,
+  store = {},
+  printMode = "CUSTOMER",
+}) {
   if (!order) return null;
 
-  const isKitchen = printMode === 'KITCHEN';
+  const isKitchen = printMode === "KITCHEN";
   const is80mm = store?.printerWidth === 80;
-  const isSmallFont = store?.receiptFontSize === 'SMALL';
+  const isSmallFont = store?.receiptFontSize === "SMALL";
   const isDoubleHeight = store?.receiptDoubleHeight !== false;
 
-  const orderNum = order.receiptNumber || order.orderNumber || '-';
+  const orderNum = order.receiptNumber || order.orderNumber || "-";
   const rawQueue =
     order.queueNumber ||
     order.queue_number ||
     order.queue ||
     order.queueNo ||
-    (order.tableNumber ? `Meja ${order.tableNumber}` : (orderNum ? orderNum.slice(-4) : '-'));
+    (order.tableNumber
+      ? `Meja ${order.tableNumber}`
+      : orderNum
+        ? orderNum.slice(-4)
+        : "-");
 
   const isTakeaway =
-    order.orderType === 'TAKEAWAY' ||
-    String(rawQueue).toUpperCase().startsWith('TA');
+    order.orderType === "TAKEAWAY" ||
+    String(rawQueue).toUpperCase().startsWith("TA");
 
   const customerName =
     order.customerName ||
     order.customerNameSnapshot ||
     order.customer?.name ||
-    'Umum';
+    "Umum";
 
-  const cashierName =
-    order.cashierName ||
-    order.createdBy?.name ||
-    'Kasir';
+  const cashierName = order.cashierName || order.createdBy?.name || "Kasir";
 
   const total = parseFloat(order.totalAmount || order.grandTotal || 0);
 
   return (
-    <div id="thermal-receipt-print-area" className="hidden print:block font-mono text-black">
+    <div
+      id="thermal-receipt-print-area"
+      className="hidden print:block font-mono text-black"
+    >
       <div
         className={cn(
-          'mx-auto p-1 leading-tight',
+          "mx-auto p-1 leading-tight",
           is80mm
             ? isSmallFont
-              ? 'w-[80mm] max-w-[80mm] text-[10.5px]'
-              : 'w-[80mm] max-w-[80mm] text-xs'
+              ? "w-[80mm] max-w-[80mm] text-[10.5px]"
+              : "w-[80mm] max-w-[80mm] text-xs"
             : isSmallFont
-            ? 'w-[58mm] max-w-[58mm] text-[9.5px]'
-            : 'w-[58mm] max-w-[58mm] text-[11px]'
+              ? "w-[58mm] max-w-[58mm] text-[9.5px]"
+              : "w-[58mm] max-w-[58mm] text-[11px]",
         )}
       >
         {isKitchen ? (
@@ -74,13 +82,15 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
 
             {/* Banner Tipe Pesanan */}
             <div className="text-center font-black text-xs py-0.5 border-2 border-black uppercase tracking-wider mb-2">
-              {isTakeaway ? '[ BUNGKUS / TAKEAWAY ]' : '[ DINE IN / DI TEMPAT ]'}
+              {isTakeaway
+                ? "[ BUNGKUS / TAKEAWAY ]"
+                : "[ DINE IN / DI TEMPAT ]"}
             </div>
 
             {/* Nomor Antrean / Meja Menonjol & Besar */}
             <div className="text-center border-2 border-black rounded p-1.5 my-2">
               <div className="text-[10px] uppercase font-bold tracking-widest text-gray-700">
-                {order.tableNumber ? 'NOMOR MEJA' : 'NOMOR ANTREAN'}
+                {order.tableNumber ? "NOMOR MEJA" : "NOMOR ANTREAN"}
               </div>
               <div className="text-3xl sm:text-4xl font-black tracking-tight">
                 {order.tableNumber ? `MEJA ${order.tableNumber}` : rawQueue}
@@ -91,7 +101,9 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
             <div className="text-[10px] sm:text-[11px] space-y-0.5 my-2">
               <div className="flex justify-between">
                 <span className="text-gray-700">Tipe:</span>
-                <span className="font-bold">{isTakeaway ? 'Takeaway / Bungkus' : 'Dine In / Di Tempat'}</span>
+                <span className="font-bold">
+                  {isTakeaway ? "Takeaway / Bungkus" : "Dine In / Di Tempat"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-700">No. Struk:</span>
@@ -103,7 +115,9 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-700">Pelanggan:</span>
-                <span className="font-bold truncate max-w-[150px]">{customerName}</span>
+                <span className="font-bold truncate max-w-37.5">
+                  {customerName}
+                </span>
               </div>
             </div>
 
@@ -114,12 +128,17 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
             <div className="space-y-2.5">
               {(order.items || []).map((item, idx) => {
                 const qty = item.quantity || item.qty || 1;
-                const pName = item.productName || item.productNameSnapshot || 'Menu';
-                const vName = item.variantName || item.variantNameSnapshot || '';
-                const notes = item.notes || '';
+                const pName =
+                  item.productName || item.productNameSnapshot || "Menu";
+                const vName =
+                  item.variantName || item.variantNameSnapshot || "";
+                const notes = item.notes || "";
 
                 return (
-                  <div key={item.id || idx} className="border-b border-gray-400 pb-2">
+                  <div
+                    key={item.id || idx}
+                    className="border-b border-gray-400 pb-2"
+                  >
                     <div className="flex items-start gap-1.5">
                       <span className="text-sm sm:text-base font-black px-1.5 py-0.5 border border-black rounded bg-white shrink-0">
                         {qty}x
@@ -128,11 +147,13 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
                         <div className="text-xs sm:text-sm font-black leading-tight uppercase">
                           {pName}
                         </div>
-                        {vName && vName !== 'Standard' && vName !== 'Regular' && (
-                          <div className="text-[11px] font-bold text-gray-800 mt-0.5">
-                            Varian: {vName}
-                          </div>
-                        )}
+                        {vName &&
+                          vName !== "Standard" &&
+                          vName !== "Regular" && (
+                            <div className="text-[11px] font-bold text-gray-800 mt-0.5">
+                              Varian: {vName}
+                            </div>
+                          )}
                         {notes && (
                           <div className="text-[10px] font-bold bg-black text-white px-1.5 py-0.5 rounded mt-1 inline-block">
                             Catatan: {notes}
@@ -158,26 +179,27 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
              ══════════════════════════════════════════════════════════════════ */
           <div>
             {/* Logo Toko */}
-            {store?.receiptShowLogo !== false && (store?.receiptLogoUrl || store?.logoUrl) && (
-              <div className="text-center mb-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={store.receiptLogoUrl || store.logoUrl}
-                  alt={store.name || 'Logo'}
-                  className="mx-auto max-h-12 max-w-[40mm] object-contain filter grayscale"
-                />
-              </div>
-            )}
+            {store?.receiptShowLogo !== false &&
+              (store?.receiptLogoUrl || store?.logoUrl) && (
+                <div className="text-center mb-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={store.receiptLogoUrl || store.logoUrl}
+                    alt={store.name || "Logo"}
+                    className="mx-auto max-h-12 max-w-[40mm] object-contain filter grayscale"
+                  />
+                </div>
+              )}
 
             {/* Nama Toko */}
             {store?.receiptShowStoreName !== false && (
               <div
                 className={cn(
-                  'text-center font-bold uppercase tracking-wider',
-                  isDoubleHeight ? 'text-xs sm:text-sm' : 'text-[11px]'
+                  "text-center font-bold uppercase tracking-wider",
+                  isDoubleHeight ? "text-xs sm:text-sm" : "text-[11px]",
                 )}
               >
-                {store?.name || 'OMNI POS'}
+                {store?.name || "OMNI POS"}
               </div>
             )}
 
@@ -185,20 +207,20 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
             {store?.receiptHeader && store.receiptHeader.trim() ? (
               <div
                 className={cn(
-                  'text-[10px] text-gray-700 whitespace-pre-line my-0.5',
-                  store?.receiptHeaderAlign === 'LEFT'
-                    ? 'text-left'
-                    : store?.receiptHeaderAlign === 'RIGHT'
-                    ? 'text-right'
-                    : 'text-center',
-                  store?.receiptHeaderBold && 'font-bold'
+                  "text-[10px] text-gray-700 whitespace-pre-line my-0.5",
+                  store?.receiptHeaderAlign === "LEFT"
+                    ? "text-left"
+                    : store?.receiptHeaderAlign === "RIGHT"
+                      ? "text-right"
+                      : "text-center",
+                  store?.receiptHeaderBold && "font-bold",
                 )}
               >
                 {store.receiptHeader}
               </div>
             ) : (
               <div className="text-center text-[10px] text-gray-600">
-                {store?.address || store?.branchName || 'Cabang Utama'}
+                {store?.address || store?.branchName || "Cabang Utama"}
               </div>
             )}
 
@@ -208,7 +230,7 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
             {(order.tableNumber || rawQueue) && (
               <div className="text-center border border-black rounded p-1 my-1">
                 <div className="text-[9px] uppercase font-bold tracking-widest text-gray-700">
-                  {order.tableNumber ? 'NOMOR MEJA' : 'NOMOR ANTREAN'}
+                  {order.tableNumber ? "NOMOR MEJA" : "NOMOR ANTREAN"}
                 </div>
                 <div className="text-2xl font-black tracking-tight">
                   {order.tableNumber ? `MEJA ${order.tableNumber}` : rawQueue}
@@ -229,7 +251,7 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
               <div className="flex justify-between">
                 <span>Pesanan:</span>
                 <span className="font-bold">
-                  {isTakeaway ? 'Takeaway / Bungkus' : 'Dine In / Di Tempat'}
+                  {isTakeaway ? "Takeaway / Bungkus" : "Dine In / Di Tempat"}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -238,7 +260,9 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
               </div>
               <div className="flex justify-between">
                 <span>Pelanggan:</span>
-                <span className="font-semibold truncate max-w-[140px]">{customerName}</span>
+                <span className="font-semibold truncate max-w-35">
+                  {customerName}
+                </span>
               </div>
             </div>
 
@@ -250,15 +274,17 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
                 const qty = item.quantity || item.qty || 1;
                 const unitPrice = parseFloat(item.price || item.unitPrice || 0);
                 const subtotal = parseFloat(item.subtotal || unitPrice * qty);
-                const pName = item.productName || item.productNameSnapshot || 'Item';
-                const vName = item.variantName || item.variantNameSnapshot || '';
-                const notes = item.notes || '';
+                const pName =
+                  item.productName || item.productNameSnapshot || "Item";
+                const vName =
+                  item.variantName || item.variantNameSnapshot || "";
+                const notes = item.notes || "";
 
                 return (
                   <div key={item.id || idx}>
                     <div className="font-semibold leading-tight">
                       {pName}
-                      {vName && vName !== 'Standard' && vName !== 'Regular' && (
+                      {vName && vName !== "Standard" && vName !== "Regular" && (
                         <span className="font-normal text-[10px] text-gray-700 ml-1">
                           ({vName})
                         </span>
@@ -273,7 +299,9 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
                       <span>
                         {qty} x {formatRupiah(unitPrice)}
                       </span>
-                      <span className="font-semibold">{formatRupiah(subtotal)}</span>
+                      <span className="font-semibold">
+                        {formatRupiah(subtotal)}
+                      </span>
                     </div>
                   </div>
                 );
@@ -286,12 +314,16 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
             <div className="text-[10px] space-y-0.5">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>{formatRupiah(total)}</span>
+                <span>
+                  {formatRupiah(
+                    order.subtotal || total + (Number(order.discountAmount) || 0)
+                  )}
+                </span>
               </div>
 
               {order.discountAmount && Number(order.discountAmount) > 0 && (
-                <div className="flex justify-between text-gray-800">
-                  <span>Diskon:</span>
+                <div className="flex justify-between text-gray-800 font-semibold">
+                  <span>Diskon Promo:</span>
                   <span>-{formatRupiah(order.discountAmount)}</span>
                 </div>
               )}
@@ -309,8 +341,8 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
 
             <div
               className={cn(
-                'flex justify-between font-black my-0.5',
-                isDoubleHeight ? 'text-xs sm:text-sm' : 'text-[11px]'
+                "flex justify-between font-black my-0.5",
+                isDoubleHeight ? "text-xs sm:text-sm" : "text-[11px]",
               )}
             >
               <span>TOTAL</span>
@@ -323,16 +355,22 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
             <div className="text-[10px] space-y-0.5 mt-1">
               <div className="flex justify-between">
                 <span>Metode Bayar:</span>
-                <span className="font-bold">{order.paymentMethod || order.payment?.method || 'CASH'}</span>
+                <span className="font-bold">
+                  {order.paymentMethod || order.payment?.method || "CASH"}
+                </span>
               </div>
 
-              {(order.paymentMethod === 'CASH' || order.payment?.method === 'CASH' || !order.paymentMethod) && (
+              {(order.paymentMethod === "CASH" ||
+                order.payment?.method === "CASH" ||
+                !order.paymentMethod) && (
                 <>
                   <div className="flex justify-between">
                     <span>Uang Diterima:</span>
                     <span>
                       {formatRupiah(
-                        order.cashReceived || order.payment?.cashReceived || total
+                        order.cashReceived ||
+                          order.payment?.cashReceived ||
+                          total,
                       )}
                     </span>
                   </div>
@@ -340,7 +378,9 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
                     <span>Kembalian:</span>
                     <span>
                       {formatRupiah(
-                        order.changeAmount || order.payment?.changeAmount || Math.max(0, (order.cashReceived || total) - total)
+                        order.changeAmount ||
+                          order.payment?.changeAmount ||
+                          Math.max(0, (order.cashReceived || total) - total),
                       )}
                     </span>
                   </div>
@@ -354,21 +394,25 @@ export default function ThermalReceipt({ order, store = {}, printMode = 'CUSTOME
             {store?.receiptFooter && store.receiptFooter.trim() ? (
               <div
                 className={cn(
-                  'text-[10px] space-y-0.5 whitespace-pre-line text-gray-800',
-                  store?.receiptFooterAlign === 'LEFT'
-                    ? 'text-left'
-                    : store?.receiptFooterAlign === 'RIGHT'
-                    ? 'text-right'
-                    : 'text-center',
-                  store?.receiptFooterBold && 'font-bold'
+                  "text-[10px] space-y-0.5 whitespace-pre-line text-gray-800",
+                  store?.receiptFooterAlign === "LEFT"
+                    ? "text-left"
+                    : store?.receiptFooterAlign === "RIGHT"
+                      ? "text-right"
+                      : "text-center",
+                  store?.receiptFooterBold && "font-bold",
                 )}
               >
                 {store.receiptFooter}
               </div>
             ) : (
               <div className="text-center text-[10px] space-y-0.5 text-gray-700">
-                <div className="font-semibold">Terima kasih atas kunjungan Anda!</div>
-                <div className="text-[9px]">Simpan struk ini sebagai bukti pembayaran sah.</div>
+                <div className="font-semibold">
+                  Terima kasih atas kunjungan Anda!
+                </div>
+                <div className="text-[9px]">
+                  Simpan struk ini sebagai bukti pembayaran sah.
+                </div>
               </div>
             )}
           </div>

@@ -95,7 +95,7 @@ export default function TopNavbar({ onToggleMobile }) {
       await switchBranch(branchItem.id);
       toast.success(
         t("branches.switchBranchSuccess", { branchName: branchItem.name }) ||
-          `Berhasil beralih ke ${branchItem.name}`
+          `Berhasil beralih ke ${branchItem.name}`,
       );
       setIsBranchDropdownOpen(false);
     } catch (err) {
@@ -163,10 +163,6 @@ export default function TopNavbar({ onToggleMobile }) {
                 <span className="truncate max-w-28 sm:max-w-40 font-extrabold text-slate-900">
                   {currentBranchName}
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-emerald-100 text-[10px] font-black text-emerald-800 border border-emerald-200 uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>{t("branches.activeBranchBadge") || "Aktif"}</span>
-                </span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700 transition-transform duration-200 ${
                     isBranchDropdownOpen ? "rotate-180 text-slate-900" : ""
@@ -194,7 +190,8 @@ export default function TopNavbar({ onToggleMobile }) {
                     ) : (
                       branchList.map((branchItem) => {
                         const isActive =
-                          branchItem.id === (activeBranchId || activeBranch?.id);
+                          branchItem.id ===
+                          (activeBranchId || activeBranch?.id);
 
                         return (
                           <button
@@ -277,8 +274,8 @@ export default function TopNavbar({ onToggleMobile }) {
               isConnected
                 ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
                 : isReconnecting
-                ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
-                : "bg-white/70 text-slate-600 hover:text-slate-900 border-slate-200/70 hover:bg-white/95"
+                  ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                  : "bg-white/70 text-slate-600 hover:text-slate-900 border-slate-200/70 hover:bg-white/95"
             }`}
             title={
               isConnected
@@ -291,8 +288,8 @@ export default function TopNavbar({ onToggleMobile }) {
                 isConnected
                   ? "text-emerald-600"
                   : isReconnecting
-                  ? "text-amber-600 animate-spin"
-                  : "text-slate-500"
+                    ? "text-amber-600 animate-spin"
+                    : "text-slate-500"
               }`}
             />
             <span className="hidden xl:inline text-[11px] font-extrabold truncate max-w-28">

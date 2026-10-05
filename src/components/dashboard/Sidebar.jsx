@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Shield,
   Smartphone,
+  Ticket,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -102,6 +103,7 @@ export default function Sidebar({ onCloseMobile }) {
       '/dashboard/pos',
       '/dashboard/shifts',
       '/dashboard/transactions',
+      '/dashboard/promotions',
     ];
 
     if (!activeRoutes.includes(href)) {
@@ -190,6 +192,16 @@ export default function Sidebar({ onCloseMobile }) {
           isLocked: true,
           minPlan: 'PLUS',
           permission: 'settings:view',
+        },
+        {
+          name: t('dashboard.sidebar.items.promotions') || 'Promo & Diskon',
+          href: '/dashboard/upgrade',
+          icon: Ticket,
+          badge: 'PLUS',
+          badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+          isLocked: true,
+          minPlan: 'PLUS',
+          permission: 'inventory:view',
         },
         {
           name: t('dashboard.sidebar.items.products'),
@@ -282,6 +294,14 @@ export default function Sidebar({ onCloseMobile }) {
           badge: null,
           isLocked: false,
           permission: 'settings:view',
+        },
+        {
+          name: t('dashboard.sidebar.items.promotions') || 'Promo & Diskon',
+          href: '/dashboard/promotions',
+          icon: Ticket,
+          badge: null,
+          isLocked: false,
+          permission: 'inventory:view',
         },
       ],
     },
