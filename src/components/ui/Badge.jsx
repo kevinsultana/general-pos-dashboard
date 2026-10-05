@@ -24,19 +24,19 @@ export default function Badge({
 }) {
   const variantStyles = {
     default:
-      "bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700/80",
+      "bg-slate-100/80 text-slate-700 border-slate-200/80",
     primary:
-      "bg-amber-100/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-300/80 dark:border-amber-800/50",
+      "bg-amber-100/80 text-amber-900 border-amber-300/80",
     success:
-      "bg-emerald-100/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-800/50",
+      "bg-emerald-100/80 text-emerald-900 border-emerald-300/80",
     warning:
-      "bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/40",
+      "bg-amber-50 text-amber-800 border-amber-200",
     danger:
-      "bg-rose-100/80 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border-rose-300/80 dark:border-rose-800/50",
+      "bg-rose-100/80 text-rose-800 border-rose-300/80",
     purple:
-      "bg-violet-100/80 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border-violet-300/80 dark:border-violet-800/50",
+      "bg-violet-100/80 text-violet-800 border-violet-300/80",
     neutral:
-      "bg-white/70 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60",
+      "bg-white/70 text-slate-600 border-slate-200/60",
   };
 
   const dotColors = {

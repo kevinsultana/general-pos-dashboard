@@ -76,7 +76,7 @@ export default function GlassModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "glass-modal-title" : undefined}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose?.();
@@ -87,9 +87,9 @@ export default function GlassModal({
         ref={modalRef}
         className={cn(
           "w-full rounded-3xl overflow-hidden flex flex-col",
-          "bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl",
-          "border border-white/50 dark:border-white/10",
-          "shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]",
+          "bg-white/95 backdrop-blur-2xl",
+          "border border-white/90",
+          "shadow-2xl",
           "animate-in zoom-in-95 duration-200",
           "max-h-[90vh]",
           sizeClasses[size] || sizeClasses.md,
@@ -98,10 +98,10 @@ export default function GlassModal({
       >
         {/* Header Modal */}
         {(title || !hideCloseButton) && (
-          <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
+          <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 shrink-0 bg-slate-50/80">
             <div className="flex items-center gap-3 min-w-0 pr-2">
               {icon && (
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0">
                   {icon}
                 </div>
               )}
@@ -109,13 +109,13 @@ export default function GlassModal({
                 {title && (
                   <h3
                     id="glass-modal-title"
-                    className="text-base font-black text-slate-900 dark:text-white truncate tracking-tight"
+                    className="text-base font-black text-slate-900 truncate tracking-tight"
                   >
                     {title}
                   </h3>
                 )}
                 {description && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  <p className="text-xs text-slate-500 truncate mt-0.5">
                     {description}
                   </p>
                 )}
@@ -127,7 +127,7 @@ export default function GlassModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Tutup modal"
-                className="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -136,13 +136,13 @@ export default function GlassModal({
         )}
 
         {/* Body Modal (Scrollable) */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6 text-slate-800 dark:text-slate-200">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6 text-slate-800">
           {children}
         </div>
 
         {/* Footer Modal (Opsional) */}
         {footer && (
-          <div className="px-5 sm:px-6 py-4 bg-slate-50/70 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-800/80 shrink-0 flex items-center justify-end gap-2.5">
+          <div className="px-5 sm:px-6 py-4 bg-slate-50/80 border-t border-slate-100 shrink-0 flex items-center justify-end gap-2.5">
             {footer}
           </div>
         )}

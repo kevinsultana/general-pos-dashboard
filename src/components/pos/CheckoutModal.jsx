@@ -24,19 +24,19 @@ const PAYMENT_METHODS = [
     key: "CASH",
     label: "Tunai",
     icon: Banknote,
-    color: "bg-emerald-500/10 border-emerald-400 text-emerald-800 dark:text-emerald-300",
+    color: "bg-emerald-500/10 border-emerald-400 text-emerald-800",
   },
   {
     key: "QRIS",
     label: "QRIS",
     icon: QrCode,
-    color: "bg-violet-500/10 border-violet-400 text-violet-800 dark:text-violet-300",
+    color: "bg-violet-500/10 border-violet-400 text-violet-800",
   },
   {
     key: "TRANSFER",
     label: "Transfer",
     icon: CreditCard,
-    color: "bg-blue-500/10 border-blue-400 text-blue-800 dark:text-blue-300",
+    color: "bg-blue-500/10 border-blue-400 text-blue-800",
   },
 ];
 
@@ -153,10 +153,10 @@ export default function CheckoutModal({
       footer={
         <div className="flex items-center justify-between w-full gap-3">
           <div className="text-left">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Total Bayar
             </span>
-            <span className="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-400">
+            <span className="text-lg sm:text-xl font-black text-emerald-700">
               {fmt(total)}
             </span>
           </div>
@@ -165,7 +165,7 @@ export default function CheckoutModal({
             <button
               type="button"
               onClick={onClose}
-              className="min-h-11 px-4 py-2.5 rounded-2xl text-xs font-extrabold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="min-h-11 px-4 py-2.5 rounded-2xl text-xs font-extrabold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Batal
             </button>
@@ -173,13 +173,13 @@ export default function CheckoutModal({
               type="button"
               onClick={handleCheckout}
               disabled={isSubmitting}
-              className="min-h-11 px-6 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white font-extrabold text-xs sm:text-sm shadow-md flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="min-h-11 px-6 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-slate-900/15 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-white" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>Bayar Sekarang</span>
                 </>
               )}
@@ -191,11 +191,11 @@ export default function CheckoutModal({
       <div className="space-y-4">
 
         {/* Ringkasan Order & Pelanggan */}
-        <div className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2.5 text-xs">
+        <div className="p-4 rounded-2xl bg-white/60 border border-slate-200/80 space-y-2.5 text-xs">
           {/* Info Pesanan Meja */}
           {activeOrder && (
-            <div className="pb-2 border-b border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
-              <span className="text-slate-500 dark:text-slate-400 font-semibold">
+            <div className="pb-2 border-b border-slate-200/60 flex items-center justify-between">
+              <span className="text-slate-500 font-semibold">
                 Pesanan Meja
               </span>
               <Badge variant="primary" size="sm">
@@ -210,8 +210,8 @@ export default function CheckoutModal({
 
           {/* Info Pelanggan */}
           {(selectedCustomer?.customer || selectedCustomer?.label) && (
-            <div className="pb-2 border-b border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
-              <span className="text-slate-500 dark:text-slate-400 font-semibold">
+            <div className="pb-2 border-b border-slate-200/60 flex items-center justify-between">
+              <span className="text-slate-500 font-semibold">
                 Pelanggan
               </span>
               <Badge variant="success" size="sm">
@@ -231,16 +231,16 @@ export default function CheckoutModal({
                 className="flex items-center justify-between text-xs"
               >
                 <div className="min-w-0 pr-2">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                  <span className="font-bold text-slate-800 truncate block">
                     {item.productName} ({item.variantName}) ×{item.qty}
                   </span>
                   {item.notes && (
-                    <span className="text-[10px] text-amber-800 dark:text-amber-400 italic block">
+                    <span className="text-[10px] text-amber-800 italic block">
                       "{item.notes}"
                     </span>
                   )}
                 </div>
-                <span className="font-extrabold text-slate-900 dark:text-white shrink-0">
+                <span className="font-extrabold text-slate-900 shrink-0">
                   {fmt(item.price * item.qty)}
                 </span>
               </div>
@@ -248,14 +248,14 @@ export default function CheckoutModal({
           </div>
 
           {/* Subtotal & Diskon */}
-          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 space-y-1">
+          <div className="pt-2 border-t border-slate-200/60 space-y-1">
             {discount > 0 && (
               <>
-                <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <div className="flex items-center justify-between text-slate-500">
                   <span>Subtotal</span>
                   <span>{fmt(subtotal)}</span>
                 </div>
-                <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-bold">
+                <div className="flex items-center justify-between text-emerald-700 font-bold">
                   <span className="flex items-center gap-1">
                     <Ticket className="w-3 h-3" />
                     {appliedPromoCode ? `Promo (${appliedPromoCode})` : "Diskon"}
@@ -266,8 +266,8 @@ export default function CheckoutModal({
             )}
 
             <div className="flex items-center justify-between pt-1 text-sm font-black">
-              <span className="text-slate-800 dark:text-slate-200">Total Tagihan</span>
-              <span className="text-emerald-700 dark:text-emerald-400 text-base">
+              <span className="text-slate-800">Total Tagihan</span>
+              <span className="text-emerald-700 text-base">
                 {fmt(total)}
               </span>
             </div>
@@ -276,7 +276,7 @@ export default function CheckoutModal({
 
         {/* Pilihan Metode Pembayaran */}
         <div className="space-y-1.5">
-          <label className="text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+          <label className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
             Metode Pembayaran
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -291,16 +291,16 @@ export default function CheckoutModal({
                   className={cn(
                     "min-h-12 py-3 px-2 rounded-2xl border-2 font-black text-xs transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer",
                     isSelected
-                      ? "border-amber-500 bg-amber-500/15 dark:bg-amber-400/10 text-amber-900 dark:text-amber-300 shadow-sm"
-                      : "border-slate-200/80 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                      ? "border-amber-500 bg-amber-500/15 text-amber-900 shadow-sm"
+                      : "border-slate-200/80 bg-white/60 text-slate-600 hover:border-slate-300"
                   )}
                 >
                   <Icon
                     className={cn(
                       "w-5 h-5",
                       isSelected
-                        ? "text-amber-600 dark:text-amber-400"
-                        : "text-slate-400 dark:text-slate-500"
+                        ? "text-amber-600"
+                        : "text-slate-400"
                     )}
                   />
                   <span>{m.label}</span>
@@ -312,24 +312,24 @@ export default function CheckoutModal({
 
         {/* Panel Kasir Tunai dengan Numpad Sentuh */}
         {paymentMethod === "CASH" && (
-          <div className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-300/60 dark:border-amber-800/40 space-y-3">
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-300/60 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider">
+              <label className="text-xs font-black text-amber-900 uppercase tracking-wider">
                 Uang Diterima
               </label>
               <div className="text-right">
-                <span className="text-base font-black text-slate-900 dark:text-white">
+                <span className="text-base font-black text-slate-900">
                   {cashReceived ? `Rp ${formatRibuan(cashReceived)}` : fmt(total)}
                 </span>
               </div>
             </div>
 
             {/* Kembalian Live */}
-            <div className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-white/70 dark:bg-slate-800/70 border border-amber-200/60 dark:border-amber-800/40 text-xs">
-              <span className="font-bold text-slate-600 dark:text-slate-400">
+            <div className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-white/70 border border-amber-200/60 text-xs">
+              <span className="font-bold text-slate-600">
                 Kembalian Kasir:
               </span>
-              <span className="text-sm font-black text-emerald-700 dark:text-emerald-400">
+              <span className="text-sm font-black text-emerald-700">
                 {fmt(changeAmount)}
               </span>
             </div>

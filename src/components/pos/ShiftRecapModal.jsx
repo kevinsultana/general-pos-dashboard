@@ -164,7 +164,7 @@ export default function ShiftRecapModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -173,7 +173,7 @@ export default function ShiftRecapModal({
         {/* Konten Scrollable */}
         <div className="p-5 overflow-y-auto space-y-5 flex-1 custom-scrollbar">
           {/* Metadata Shift */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/80 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Waktu Buka
@@ -203,7 +203,7 @@ export default function ShiftRecapModal({
 
           {/* 4 Kartu KPI Keuangan */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
+            <div className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                 <Wallet className="w-3 h-3 text-slate-400" /> Modal Awal
               </span>
@@ -250,7 +250,7 @@ export default function ShiftRecapModal({
           </div>
 
           {/* Rincian Metode Pembayaran */}
-          <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
+          <div className="p-4 rounded-2xl bg-white/80 border border-slate-200/80 space-y-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
               <CreditCard className="w-3.5 h-3.5 text-amber-500" />
               <span>Rincian Pembayaran Transaksi</span>
@@ -294,7 +294,7 @@ export default function ShiftRecapModal({
           </div>
 
           {/* Rekonsiliasi Kas Laci & Analisis Selisih */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
               <Wallet className="w-3.5 h-3.5 text-amber-500" />
               <span>Rekonsiliasi Kas Laci (Cash Drawer)</span>
@@ -313,7 +313,7 @@ export default function ShiftRecapModal({
                   {fmt(cashSales)}
                 </span>
               </div>
-              <div className="pt-2 border-t border-slate-200 flex items-center justify-between font-bold text-slate-900">
+              <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between font-bold text-slate-900">
                 <span>Total Kas Seharusnya di Laci (Expected)</span>
                 <span className="text-sm font-extrabold text-slate-950">
                   {fmt(expectedCash)}
@@ -363,7 +363,7 @@ export default function ShiftRecapModal({
         </div>
 
         {/* Footer Tombol Aksi */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-3 shrink-0">
           <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
             Dokumen resmi Z-Report siap diunduh dalam format PDF.
           </p>
@@ -372,7 +372,7 @@ export default function ShiftRecapModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition-colors"
+              className="px-4 py-2.5 rounded-xl border border-slate-200/80 bg-white/80 hover:bg-white text-slate-700 font-bold text-xs transition-colors cursor-pointer"
             >
               Tutup
             </button>

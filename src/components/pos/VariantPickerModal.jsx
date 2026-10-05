@@ -34,24 +34,24 @@ export default function VariantPickerModal({ product, onSelect, onClose }) {
               onSelect(product, v);
               onClose();
             }}
-            className="w-full min-h-12 flex items-center justify-between p-3.5 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 hover:bg-amber-50/80 dark:hover:bg-amber-950/30 hover:border-amber-400/60 dark:hover:border-amber-400/40 transition-all group text-left cursor-pointer active:scale-[0.99]"
+            className="w-full min-h-12 flex items-center justify-between p-3.5 rounded-2xl bg-white/70 border border-slate-200/80 hover:bg-amber-50/80 hover:border-amber-400/60 transition-all group text-left cursor-pointer active:scale-[0.99]"
           >
             <div className="min-w-0 pr-2">
-              <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-amber-800 dark:group-hover:text-amber-300 truncate">
+              <p className="text-sm font-black text-slate-900 group-hover:text-amber-800 truncate">
                 {v.name}
               </p>
               {v.costPrice ? (
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                <p className="text-[11px] text-slate-400 mt-0.5">
                   HPP: {fmt(v.costPrice)}
                 </p>
               ) : null}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-sm font-black text-emerald-700 dark:text-emerald-400">
+              <span className="text-sm font-black text-emerald-700">
                 {fmt(v.price)}
               </span>
-              <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-amber-500 transition-colors" />
+              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-amber-500 transition-colors" />
             </div>
           </button>
         ))}

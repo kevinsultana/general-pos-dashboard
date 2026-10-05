@@ -24,19 +24,19 @@ export default function EmptyState({
     <div
       className={cn(
         "flex flex-col items-center justify-center p-8 text-center rounded-3xl",
-        "bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm",
-        "border border-dashed border-slate-200 dark:border-slate-800",
+        "bg-white/40 backdrop-blur-sm",
+        "border border-dashed border-slate-200",
         className
       )}
     >
-      <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 flex items-center justify-center mb-3">
+      <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
         {icon || <PackageOpen className="w-6 h-6" />}
       </div>
-      <h4 className="text-sm font-black text-slate-800 dark:text-slate-200">
+      <h4 className="text-sm font-black text-slate-800">
         {title}
       </h4>
       {description && (
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs leading-relaxed">
+        <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
           {description}
         </p>
       )}

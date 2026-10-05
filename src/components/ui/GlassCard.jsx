@@ -26,20 +26,20 @@ export default function GlassCard({
 }) {
   const variantStyles = {
     default:
-      "bg-white/75 dark:bg-slate-900/70 border-white/30 dark:border-white/10 shadow-[0_8px_32px_0_rgba(15,23,42,0.06)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]",
+      "bg-white/75 border-white/60 shadow-[0_8px_32px_0_rgba(15,23,42,0.06)]",
     subtle:
-      "bg-white/50 dark:bg-slate-900/50 border-white/20 dark:border-white/5 shadow-xs",
+      "bg-white/50 border-white/40 shadow-xs",
     elevated:
-      "bg-white/85 dark:bg-slate-900/80 border-white/40 dark:border-white/15 shadow-[0_12px_40px_0_rgba(15,23,42,0.1)] dark:shadow-[0_12px_40px_0_rgba(0,0,0,0.4)]",
+      "bg-white/85 border-white/80 shadow-[0_12px_40px_0_rgba(15,23,42,0.1)]",
     interactive:
-      "bg-white/75 dark:bg-slate-900/70 border-white/30 dark:border-white/10 shadow-sm hover:shadow-md hover:border-amber-400/50 dark:hover:border-amber-400/40 hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer",
+      "bg-white/75 border-white/60 shadow-sm hover:shadow-md hover:border-amber-400/50 hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer",
   };
 
   return (
     <Component
       onClick={onClick}
       className={cn(
-        "rounded-3xl backdrop-blur-xl border transition-all text-slate-900 dark:text-slate-100",
+        "rounded-3xl backdrop-blur-xl border transition-all text-slate-900",
         variantStyles[variant] || variantStyles.default,
         clickable && !variant.includes("interactive") && "cursor-pointer active:scale-[0.99]",
         className

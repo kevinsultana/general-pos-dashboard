@@ -80,7 +80,7 @@ export default function HoldCartModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -132,7 +132,7 @@ export default function HoldCartModal({
               return (
                 <div
                   key={item.id}
-                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-amber-300 hover:shadow-md transition-all space-y-3 group"
+                  className="p-4 rounded-2xl bg-white/80 border border-slate-200/80 hover:border-amber-400/60 hover:shadow-md transition-all space-y-3 group"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1 min-w-0">
@@ -204,7 +204,7 @@ export default function HoldCartModal({
                           );
                         }
                       }}
-                      className="text-xs font-bold text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-rose-50"
+                      className="text-xs font-bold text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-rose-50 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Hapus</span>
@@ -216,7 +216,7 @@ export default function HoldCartModal({
                         onRecall(item);
                         onClose();
                       }}
-                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-slate-900/15 active:scale-95 transition-all cursor-pointer"
                     >
                       <PlayCircle className="w-3.5 h-3.5 text-amber-400" />
                       <span>Muat Kembali ke Kasir</span>
@@ -230,14 +230,14 @@ export default function HoldCartModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-500 shrink-0">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between text-xs text-slate-500 shrink-0">
           <span className="text-[11px]">
             Tersimpan aman di browser lokal cabang aktif.
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition-colors"
+            className="px-4 py-2 rounded-xl border border-slate-200/80 bg-white/80 hover:bg-white text-slate-700 font-bold text-xs transition-colors cursor-pointer"
           >
             Tutup
           </button>

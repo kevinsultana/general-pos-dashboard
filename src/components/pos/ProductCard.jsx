@@ -30,8 +30,8 @@ function ProductCard({ product, onClick }) {
         "p-4 rounded-3xl border transition-all text-left group relative overflow-hidden flex flex-col justify-between",
         "min-h-30 select-none",
         isOutOfStock
-          ? "bg-slate-100/70 dark:bg-slate-900/40 border-slate-200/80 dark:border-slate-800/80 opacity-60 cursor-not-allowed"
-          : "bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-white/70 dark:border-white/10 shadow-xs hover:shadow-md hover:border-amber-400/60 dark:hover:border-amber-400/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+          ? "bg-slate-100/70 border-slate-200/80 opacity-60 cursor-not-allowed"
+          : "bg-white/80 backdrop-blur-xl border-white/70 shadow-xs hover:shadow-md hover:border-amber-400/60 hover:-translate-y-0.5 active:scale-95 cursor-pointer"
       )}
     >
       {/* Bagian Atas: Icon & Status Badge */}
@@ -40,8 +40,8 @@ function ProductCard({ product, onClick }) {
           className={cn(
             "w-10 h-10 rounded-2xl flex items-center justify-center transition-colors shrink-0",
             isOutOfStock
-              ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
-              : "bg-amber-500/10 dark:bg-amber-400/10 border border-amber-300/40 dark:border-amber-500/20 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/20"
+              ? "bg-slate-200 text-slate-400"
+              : "bg-amber-500/10 border border-amber-300/40 text-amber-600 group-hover:bg-amber-500/20"
           )}
         >
           <Package className="w-5 h-5" />
@@ -64,8 +64,8 @@ function ProductCard({ product, onClick }) {
           className={cn(
             "text-xs sm:text-sm font-black line-clamp-2 leading-snug tracking-tight",
             isOutOfStock
-              ? "text-slate-400 dark:text-slate-600 line-through decoration-slate-400"
-              : "text-slate-900 dark:text-white group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors"
+              ? "text-slate-400 line-through decoration-slate-400"
+              : "text-slate-900 group-hover:text-amber-800 transition-colors"
           )}
         >
           {product.name}
@@ -73,20 +73,20 @@ function ProductCard({ product, onClick }) {
       </div>
 
       {/* Bagian Bawah: Harga Varian Pertama */}
-      <div className="mt-3 flex items-center justify-between w-full pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+      <div className="mt-3 flex items-center justify-between w-full pt-1.5 border-t border-slate-100">
         <span
           className={cn(
             "text-xs font-black",
             isOutOfStock
-              ? "text-slate-400 dark:text-slate-600"
-              : "text-emerald-700 dark:text-emerald-400"
+              ? "text-slate-400"
+              : "text-emerald-700"
           )}
         >
           {firstVariant ? fmt(firstVariant.price) : "—"}
         </span>
 
         {hasMultiVariant && (
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+          <span className="text-[10px] font-bold text-slate-400 group-hover:text-amber-600 transition-colors">
             Pilih &rarr;
           </span>
         )}

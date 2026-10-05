@@ -59,8 +59,8 @@ export default function TransactionSuccessModal({
         </div>
 
         {/* Ringkasan Finansial */}
-        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+        <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2 text-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
             <span className="text-slate-500 font-semibold">
               Total Pembayaran
             </span>
@@ -80,13 +80,13 @@ export default function TransactionSuccessModal({
             <>
               <div className="flex items-center justify-between text-slate-600">
                 <span>Uang Diterima</span>
-                <span className="font-bold">
+                <span className="font-bold text-slate-800">
                   {formatRupiah(orderData.cashReceived || total)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-800 font-black">
                 <span>Kembalian</span>
-                <span className="text-amber-700 font-black text-sm">
+                <span className="text-amber-600 font-black text-sm">
                   {formatRupiah(orderData.changeAmount || 0)}
                 </span>
               </div>
@@ -94,16 +94,16 @@ export default function TransactionSuccessModal({
           )}
 
           {orderData.tableNumber && (
-            <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-amber-800 font-bold">
+            <div className="flex items-center justify-between pt-1 border-t border-slate-200/80 text-amber-800 font-bold">
               <span>Nomor Meja</span>
-              <span className="bg-amber-100 px-2 py-0.5 rounded flex items-center gap-1">
+              <span className="bg-amber-100 px-2 py-0.5 rounded flex items-center gap-1 border border-amber-200/80">
                 <Barcode className="w-3 h-3 text-amber-700" />
                 Meja {orderData.tableNumber}
               </span>
             </div>
           )}
 
-          <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-slate-500 text-[11px]">
+          <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-slate-500 text-[11px]">
             <span>{orderData.items?.length || 0} Menu Dipesan</span>
             <span className="flex items-center gap-1 font-semibold text-slate-700 truncate max-w-45">
               <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -118,7 +118,7 @@ export default function TransactionSuccessModal({
             "p-3 rounded-2xl border flex items-center justify-between text-xs transition-colors",
             isConnected
               ? "bg-emerald-50/80 border-emerald-200 text-emerald-800"
-              : "bg-slate-50 border-slate-200 text-slate-700",
+              : "bg-slate-50/80 border-slate-200/80 text-slate-700",
           )}
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -138,7 +138,7 @@ export default function TransactionSuccessModal({
             <button
               type="button"
               onClick={onOpenBluetoothModal}
-              className="text-[11px] font-extrabold text-blue-600 hover:text-blue-700 underline shrink-0 cursor-pointer"
+              className="text-[11px] font-extrabold text-amber-600 hover:underline shrink-0 cursor-pointer"
             >
               Hubungkan
             </button>
@@ -152,7 +152,7 @@ export default function TransactionSuccessModal({
             type="button"
             onClick={() => onPrintBluetooth(orderData, "CUSTOMER")}
             disabled={isPrinting}
-            className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
+            className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-black shadow-md shadow-slate-900/15 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
           >
             {isPrinting ? (
               <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
@@ -167,9 +167,9 @@ export default function TransactionSuccessModal({
             type="button"
             onClick={() => onPrintBluetooth(orderData, "KITCHEN")}
             disabled={isPrinting}
-            className="w-full py-2.5 px-4 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
+            className="w-full py-2.5 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-300/80 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
           >
-            <UtensilsCrossed className="w-4 h-4 text-amber-700" />
+            <UtensilsCrossed className="w-4 h-4 text-amber-600" />
             <span>Cetak Tiket Dapur (Tanpa Harga)</span>
           </button>
 
@@ -201,10 +201,10 @@ export default function TransactionSuccessModal({
         <button
           type="button"
           onClick={onClose}
-          className="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+          className="w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md shadow-slate-900/15 transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer mt-2"
         >
           <span>Transaksi Baru (Selesai)</span>
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4 text-amber-400" />
         </button>
       </div>
     </div>

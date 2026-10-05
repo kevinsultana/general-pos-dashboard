@@ -109,11 +109,11 @@ export default function OrderScannerModal({
 
         {/* Input Barcode Scanner */}
         <div className="space-y-1.5">
-          <label className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+          <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider block">
             Scanner Barcode / Masukkan Kode Pesanan
           </label>
           <div className="relative flex items-center">
-            <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+            <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -126,26 +126,26 @@ export default function OrderScannerModal({
                 }
               }}
               placeholder="Scan barcode atau ketik contoh: ORD-882194..."
-              className="w-full pl-10 pr-24 py-3 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 focus:bg-white dark:focus:bg-slate-800 focus:border-amber-400 font-mono text-xs font-black text-slate-900 dark:text-white outline-none uppercase transition-all shadow-xs"
+              className="w-full pl-10 pr-24 py-3 rounded-2xl bg-white/70 border border-slate-200/80 focus:bg-white focus:border-amber-400 font-mono text-xs font-black text-slate-900 outline-none uppercase transition-all shadow-xs"
             />
             <button
               type="button"
               disabled={isSearching}
               onClick={() => handleLookup(scanCode)}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white text-xs font-black transition-all active:scale-95 disabled:opacity-60 cursor-pointer shadow-xs"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black transition-all active:scale-95 disabled:opacity-60 cursor-pointer shadow-md shadow-slate-900/15"
             >
               {isSearching ? "Mencari..." : "Cari & Muat"}
             </button>
           </div>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+          <p className="text-[10px] text-slate-400">
             Mendukung laser scanner USB/Bluetooth maupun ketik kode manual lalu tekan Enter.
           </p>
         </div>
 
         {/* Header List Pesanan */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px]">
+            <span className="font-black text-slate-800 uppercase tracking-wider text-[11px]">
               Pesanan Menunggu
             </span>
             <Badge variant="primary" size="sm">
@@ -155,7 +155,7 @@ export default function OrderScannerModal({
           <button
             type="button"
             onClick={onRefresh}
-            className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-bold text-amber-700 hover:underline cursor-pointer"
           >
             <RotateCw className="w-3.5 h-3.5" />
             <span>Segarkan Antrean</span>
@@ -178,15 +178,15 @@ export default function OrderScannerModal({
               return (
                 <div
                   key={ord.id || ord.orderNumber || `pending-ord-${ordIdx}`}
-                  className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 hover:border-amber-400/70 transition-all space-y-2.5"
+                  className="p-4 rounded-2xl bg-white/60 border border-slate-200/80 hover:border-amber-400/70 transition-all space-y-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs bg-slate-100 dark:bg-slate-700/80 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-600">
+                        <span className="font-mono font-black text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
                           #{ord.orderNumber}
                         </span>
-                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                        <span className="text-xs font-black text-slate-800 truncate">
                           {ord.customerName}
                         </span>
                         {isRegistered ? (
@@ -203,13 +203,13 @@ export default function OrderScannerModal({
 
                       <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px]">
                         {phoneDisplay ? (
-                          <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                          <span className="font-bold text-slate-700 flex items-center gap-1">
                             <Phone className="w-3 h-3 text-emerald-600" />
                             <span>{phoneDisplay}</span>
                           </span>
                         ) : null}
 
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                        <span className="text-slate-500 font-semibold flex items-center gap-1">
                           {ord.orderType === "DINE_IN" ? (
                             <>
                               <UtensilsCrossed className="w-3 h-3 text-amber-600" />
@@ -227,10 +227,10 @@ export default function OrderScannerModal({
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="font-black text-amber-700 dark:text-amber-400 text-sm block">
+                      <span className="font-black text-amber-700 text-sm block">
                         {fmt(ord.totalAmount)}
                       </span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                      <span className="text-[10px] text-slate-400">
                         {new Date(ord.createdAt).toLocaleTimeString("id-ID", {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -240,11 +240,11 @@ export default function OrderScannerModal({
                   </div>
 
                   {/* Tombol Aksi */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => handleCancelOrder(ord)}
-                      className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                      className="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer"
                     >
                       Batalkan
                     </button>
@@ -254,10 +254,10 @@ export default function OrderScannerModal({
                         onSelectOrder(ord);
                         onClose();
                       }}
-                      className="min-h-9 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+                      className="min-h-9 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-slate-900/15 active:scale-95 transition-all cursor-pointer"
                     >
                       <span>Muat ke Keranjang</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
                     </button>
                   </div>
                 </div>
