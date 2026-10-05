@@ -15,11 +15,15 @@ import {
   Search,
   AlertCircle,
   ShoppingBag,
+  UploadCloud,
+  Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/AuthContext";
 import api from "../../../lib/api";
 import { showConfirmDialog } from "../../../lib/alerts";
+import { compressImage } from "../../../lib/utils";
 import UnauthorizedState from "../../../components/common/UnauthorizedState";
 
 // ─── Formatter ────────────────────────────────────────────────────────────────
@@ -108,6 +112,8 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
 
   const [name, setName] = useState(editProduct?.name || "");
   const [description, setDescription] = useState(editProduct?.description || "");
+  const [imageUrl, setImageUrl] = useState(editProduct?.imageUrl || "");
+  const [isUploading, setIsUploading] = useState(false);
   const [isActive, setIsActive] = useState(
     editProduct ? editProduct.isActive !== false : true
   );
@@ -147,6 +153,37 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
     setVariants((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      return toast.error("Format tidak didukung. Gunakan PNG, JPEG, atau WebP.");
+    }
+
+    const toastId = toast.loading("Mengompres & mengunggah gambar...");
+    try {
+      setIsUploading(true);
+      const compressed = await compressImage(file, 300); // maks 300 KB
+      const formData = new FormData();
+      formData.append("image", compressed);
+      const res = await api.upload("/products/upload-image", formData);
+      if (res?.success && res.data?.imageUrl) {
+        setImageUrl(res.data.imageUrl);
+        toast.success("Gambar produk berhasil diunggah!", { id: toastId });
+      }
+    } catch (err) {
+      toast.error(err.message || "Gagal mengunggah gambar produk.", { id: toastId });
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return toast.error("Nama produk wajib diisi.");
@@ -154,6 +191,7 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
     const payload = {
       name: name.trim(),
       description: description.trim(),
+      imageUrl: imageUrl ? imageUrl.trim() : null,
       isActive,
     };
 
@@ -245,6 +283,73 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
               placeholder="Deskripsi singkat produk (opsional)"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-amber-400 text-xs font-semibold text-slate-900 outline-none transition-all resize-none"
             />
+          </div>
+
+          {/* Upload Foto Produk ke MinIO */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                Foto Menu Produk
+              </label>
+              <span className="text-[10px] text-slate-400 font-semibold">PNG, JPG, WebP (Maks 3 MB)</span>
+            </div>
+
+            {imageUrl ? (
+              <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-amber-50/60 border border-amber-200/80">
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-amber-200 shrink-0 shadow-xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imageUrl}
+                    alt="Preview Produk"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-slate-800">Foto Menu Tersimpan</p>
+                  <p className="text-[11px] text-amber-700 font-semibold truncate mt-0.5">
+                    Tersimpan di MinIO Object Storage
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="mt-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Foto</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label
+                className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 hover:bg-slate-100/70 hover:border-amber-400 transition-all cursor-pointer select-none text-center ${
+                  isUploading ? "opacity-60 pointer-events-none" : ""
+                }`}
+              >
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+                {isUploading ? (
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-700 py-1">
+                    <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+                    <span>Mengunggah foto ke MinIO...</span>
+                  </div>
+                ) : (
+                  <>
+                    <UploadCloud className="w-7 h-7 text-amber-600 mb-1" />
+                    <span className="text-xs font-bold text-slate-800">
+                      Klik untuk Unggah Foto Menu
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">
+                      Tampil di katalog POS kasir dan menu QR order pelanggan
+                    </span>
+                  </>
+                )}
+              </label>
+            )}
           </div>
 
           {/* Toggle Ketersediaan Stok */}
@@ -584,30 +689,47 @@ export default function ProductsPage() {
                 <div key={product.id}>
                   {/* Baris utama */}
                   <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-6 py-4 items-center hover:bg-slate-50/50 transition-colors">
-                    {/* Nama & deskripsi */}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p
-                          className={`text-sm font-bold truncate ${
-                            isOutOfStock ? "text-slate-500" : "text-slate-900"
-                          }`}
-                        >
-                          {product.name}
-                        </p>
-                        {isOutOfStock && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-black border border-rose-200 shrink-0">
-                            HABIS
-                          </span>
-                        )}
-                        {variantCount > 1 && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200 shrink-0">
-                            {variantCount} varian
-                          </span>
+                    {/* Gambar, Nama & deskripsi */}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-11 h-11 rounded-2xl bg-slate-100 border border-slate-200/80 overflow-hidden shrink-0 flex items-center justify-center text-slate-400">
+                        {product.imageUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <Package className="w-5 h-5 text-slate-400" />
                         )}
                       </div>
-                      {product.description && (
-                        <p className="text-xs text-slate-400 truncate mt-0.5">{product.description}</p>
-                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p
+                            className={`text-sm font-bold truncate ${
+                              isOutOfStock ? "text-slate-500" : "text-slate-900"
+                            }`}
+                          >
+                            {product.name}
+                          </p>
+                          {isOutOfStock && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-black border border-rose-200 shrink-0">
+                              HABIS
+                            </span>
+                          )}
+                          {variantCount > 1 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200 shrink-0">
+                              {variantCount} varian
+                            </span>
+                          )}
+                        </div>
+                        {product.description && (
+                          <p className="text-xs text-slate-400 truncate mt-0.5">{product.description}</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Status Stok Toggle On/Off */}

@@ -34,17 +34,30 @@ function ProductCard({ product, onClick }) {
           : "bg-white/80 backdrop-blur-xl border-white/70 shadow-xs hover:shadow-md hover:border-amber-400/60 hover:-translate-y-0.5 active:scale-95 cursor-pointer"
       )}
     >
-      {/* Bagian Atas: Icon & Status Badge */}
+      {/* Bagian Atas: Icon/Gambar & Status Badge */}
       <div className="flex items-start justify-between gap-2 mb-2.5 w-full">
         <div
           className={cn(
-            "w-10 h-10 rounded-2xl flex items-center justify-center transition-colors shrink-0",
+            "w-11 h-11 rounded-2xl flex items-center justify-center transition-colors shrink-0 overflow-hidden relative",
             isOutOfStock
               ? "bg-slate-200 text-slate-400"
               : "bg-amber-500/10 border border-amber-300/40 text-amber-600 group-hover:bg-amber-500/20"
           )}
         >
-          <Package className="w-5 h-5" />
+          {product.imageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                const fallback = e.currentTarget.nextElementSibling;
+                if (fallback) fallback.classList.remove("hidden");
+              }}
+            />
+          ) : null}
+          <Package className={cn("w-5 h-5", product.imageUrl ? "hidden" : "")} />
         </div>
 
         {isOutOfStock ? (
@@ -100,6 +113,7 @@ export default memo(ProductCard, (prev, next) => {
   return (
     prev.product?.id === next.product?.id &&
     prev.product?.name === next.product?.name &&
+    prev.product?.imageUrl === next.product?.imageUrl &&
     prev.product?.isActive === next.product?.isActive &&
     prev.product?.variants?.length === next.product?.variants?.length &&
     prev.onClick === next.onClick

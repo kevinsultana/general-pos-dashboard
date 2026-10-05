@@ -26,18 +26,30 @@ export function usePrintReceipt({ tenant, activeBranch }) {
   const [printMode, setPrintMode] = useState("CUSTOMER"); // "CUSTOMER" | "KITCHEN"
   const [isPrinting, setIsPrinting] = useState(false);
 
-  // Konfigurasi profil toko untuk struk
-  const storeInfo = useMemo(
-    () => ({
+  // Konfigurasi profil toko untuk struk (termasuk logo & preferensi printer)
+  const storeInfo = useMemo(() => {
+    let printerWidth = 58;
+    let receiptFontSize = "NORMAL";
+    if (typeof window !== "undefined") {
+      try {
+        const savedW = localStorage.getItem("omnipos_printer_width");
+        if (savedW) printerWidth = Number(savedW);
+        const savedF = localStorage.getItem("omnipos_receipt_font_size");
+        if (savedF) receiptFontSize = savedF;
+      } catch {}
+    }
+    return {
       name: tenant?.name || activeBranch?.name || "OMNI POS",
       address: activeBranch?.address || "Cabang Utama",
       phone: activeBranch?.phone || "",
-      printerWidth: 58,
+      printerWidth,
+      receiptFontSize,
       branchName: activeBranch?.name,
       receiptShowStoreName: true,
-    }),
-    [tenant, activeBranch]
-  );
+      logoUrl: tenant?.logoUrl || null,
+      receiptShowLogo: tenant?.receiptShowLogo !== false,
+    };
+  }, [tenant, activeBranch]);
 
   /**
    * Cetak struk via Web Bluetooth ESC/POS printer.

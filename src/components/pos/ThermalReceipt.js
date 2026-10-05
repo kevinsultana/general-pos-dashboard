@@ -181,12 +181,12 @@ export default function ThermalReceipt({
             {/* Logo Toko */}
             {store?.receiptShowLogo !== false &&
               (store?.receiptLogoUrl || store?.logoUrl) && (
-                <div className="text-center mb-1">
+                <div className="text-center mb-1.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={store.receiptLogoUrl || store.logoUrl}
-                    alt={store.name || "Logo"}
-                    className="mx-auto max-h-12 max-w-[40mm] object-contain filter grayscale"
+                    alt={store.name || "Logo Toko"}
+                    className="mx-auto max-h-14 max-w-30 object-contain filter grayscale contrast-200"
                   />
                 </div>
               )}

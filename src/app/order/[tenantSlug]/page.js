@@ -221,9 +221,18 @@ export default function PublicOrderPage({ params }) {
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
         <div className="max-w-2xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-md shadow-amber-500/20 shrink-0">
-              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-amber-600">
-                <Store className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-amber-500 to-amber-600 p-0.5 shadow-md shadow-amber-500/20 shrink-0 overflow-hidden">
+              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-amber-600 overflow-hidden">
+                {storeData.tenant?.logoUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={storeData.tenant.logoUrl}
+                    alt={storeData.tenant.name}
+                    className="w-full h-full object-contain p-1"
+                  />
+                ) : (
+                  <Store className="w-5 h-5" />
+                )}
               </div>
             </div>
             <div className="min-w-0">
@@ -282,8 +291,21 @@ export default function PublicOrderPage({ params }) {
                       : "border-slate-200/80"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
+                  <div className="flex items-start gap-3">
+                    {product.imageUrl && (
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200/80 shadow-xs">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.parentElement.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3
                           className={`text-sm font-black ${

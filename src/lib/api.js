@@ -19,9 +19,11 @@ const getToken = () => {
 async function request(endpoint, options = {}) {
   const url = `${BASE_URL.replace(/\/+$/, '')}/${endpoint.replace(/^\/+/, '')}`;
 
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
   const headers = {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
     ...options.headers,
   };
 
@@ -105,19 +107,40 @@ export const api = {
     request(endpoint, {
       ...options,
       method: 'POST',
-      body: body ? JSON.stringify(body) : undefined,
+      body:
+        typeof FormData !== 'undefined' && body instanceof FormData
+          ? body
+          : body
+          ? JSON.stringify(body)
+          : undefined,
+    }),
+  upload: (endpoint, formData, options = {}) =>
+    request(endpoint, {
+      ...options,
+      method: 'POST',
+      body: formData,
     }),
   put: (endpoint, body, options = {}) =>
     request(endpoint, {
       ...options,
       method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
+      body:
+        typeof FormData !== 'undefined' && body instanceof FormData
+          ? body
+          : body
+          ? JSON.stringify(body)
+          : undefined,
     }),
   patch: (endpoint, body, options = {}) =>
     request(endpoint, {
       ...options,
       method: 'PATCH',
-      body: body ? JSON.stringify(body) : undefined,
+      body:
+        typeof FormData !== 'undefined' && body instanceof FormData
+          ? body
+          : body
+          ? JSON.stringify(body)
+          : undefined,
     }),
   delete: (endpoint, options = {}) => request(endpoint, { ...options, method: 'DELETE' }),
 };

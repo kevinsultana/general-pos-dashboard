@@ -27,6 +27,15 @@ import {
   RefreshCw,
   AlertTriangle,
   Coins,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Eye,
+  Info,
+  FileImage,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -36,7 +45,7 @@ import { showAlertNotice } from "../../../lib/alerts";
 import UnauthorizedState from "../../../components/common/UnauthorizedState";
 import { useBluetooth, BLE_PROFILES, buildReceiptBytes } from "../../../contexts/BluetoothPrinterContext";
 import BluetoothModal from "../../../components/bluetooth/BluetoothModal";
-import { cn } from "../../../lib/utils";
+import { cn, compressImage } from "../../../lib/utils";
 
 export default function StoreSettingsPage() {
   const { tenant, user, checkAuth, hasPermission } = useAuth();
@@ -45,6 +54,14 @@ export default function StoreSettingsPage() {
   const [storeName, setStoreName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // ─── Logo Toko & Opsi Cetak Struk ───────────────────────────────────────────
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isDeletingLogo, setIsDeletingLogo] = useState(false);
+  const [receiptShowLogo, setReceiptShowLogo] = useState(true);
+  const [isTogglingLogo, setIsTogglingLogo] = useState(false);
 
   // ─── Bluetooth Thermal Printer Context & Preferences ───────────────────────
   const {
@@ -142,6 +159,8 @@ export default function StoreSettingsPage() {
         printerWidth,
         receiptFontSize,
         address: "Cabang Utama",
+        logoUrl: tenant?.logoUrl || null,
+        receiptShowLogo: receiptShowLogo,
       };
       const bytes = await buildReceiptBytes(testOrder, activeStore, "CUSTOMER");
       await printBytes(bytes);
@@ -166,12 +185,141 @@ export default function StoreSettingsPage() {
     }
   }, [isAllowed, user, t]);
 
-  // Sinkronkan nama toko awal dari database
+  // Sinkronkan nama toko & logo awal dari database
   useEffect(() => {
     if (tenant?.name) {
       setStoreName(tenant.name);
     }
-  }, [tenant?.name]);
+    if (tenant?.logoUrl) {
+      setLogoPreview(tenant.logoUrl);
+    } else {
+      setLogoPreview(null);
+    }
+    if (typeof tenant?.receiptShowLogo === "boolean") {
+      setReceiptShowLogo(tenant.receiptShowLogo);
+    }
+  }, [tenant?.name, tenant?.logoUrl, tenant?.receiptShowLogo]);
+
+  // Handler Pilih File Logo
+  const handleSelectLogo = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validasi Tipe File (image/png, image/jpeg, image/webp)
+    const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Format tidak didukung. Gunakan file gambar PNG, JPG, atau WebP.");
+      return;
+    }
+
+    // Validasi Ukuran File (Maksimal 10 MB sebelum kompresi)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Ukuran file terlalu besar. Maksimal 10 MB.");
+      return;
+    }
+
+    setLogoFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setLogoPreview(objectUrl);
+  };
+
+  // Handler Upload Logo ke Server
+  const handleUploadLogo = async () => {
+    if (!logoFile) return;
+    if (!canManage) {
+      toast.error("Akses Ditolak: Anda tidak memiliki izin untuk mengunggah logo.");
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    const toastId = toast.loading("Mengompres & mengunggah logo toko...");
+
+    try {
+      const compressed = await compressImage(logoFile, 300); // maks 300 KB
+      const formData = new FormData();
+      formData.append("logo", compressed);
+
+      const response = await api.upload("/auth/store-logo", formData);
+
+      if (response?.success) {
+        setLogoFile(null);
+        await checkAuth();
+        toast.success("Logo toko berhasil diperbarui!", { id: toastId });
+      } else {
+        throw new Error(response?.message || "Gagal mengunggah logo.");
+      }
+    } catch (err) {
+      toast.error(err.message || "Terjadi kesalahan saat mengunggah logo.", { id: toastId });
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  // Handler Hapus Logo Toko
+  const handleDeleteLogo = async () => {
+    if (!canManage) {
+      toast.error("Akses Ditolak: Anda tidak memiliki izin untuk menghapus logo.");
+      return;
+    }
+
+    setIsDeletingLogo(true);
+    const toastId = toast.loading("Menghapus logo toko...");
+
+    try {
+      const response = await api.delete("/auth/store-logo");
+
+      if (response?.success) {
+        setLogoFile(null);
+        setLogoPreview(null);
+        await checkAuth();
+        toast.success("Logo toko berhasil dihapus.", { id: toastId });
+      } else {
+        throw new Error(response?.message || "Gagal menghapus logo.");
+      }
+    } catch (err) {
+      toast.error(err.message || "Gagal menghapus logo toko.", { id: toastId });
+    } finally {
+      setIsDeletingLogo(false);
+    }
+  };
+
+  // Handler Toggle Cetak Logo di Struk
+  const handleToggleReceiptLogo = async () => {
+    if (!canManage) {
+      toast.error("Akses Ditolak: Anda tidak memiliki izin untuk mengubah pengaturan struk.");
+      return;
+    }
+
+    const nextState = !receiptShowLogo;
+    setReceiptShowLogo(nextState);
+    setIsTogglingLogo(true);
+
+    try {
+      const response = await api.put("/auth/store-settings", {
+        name: storeName.trim() || tenant?.name || "Toko",
+        receiptShowLogo: nextState,
+      });
+
+      if (response?.success) {
+        await checkAuth();
+        toast.success(
+          nextState
+            ? "Logo akan dicetak di header struk penjualan."
+            : "Logo dinonaktifkan dari struk penjualan (hanya nama teks)."
+        );
+      } else {
+        // Revert jika gagal
+        setReceiptShowLogo(!nextState);
+        throw new Error(response?.message || "Gagal mengubah opsi struk.");
+      }
+    } catch (err) {
+      setReceiptShowLogo(!nextState);
+      toast.error(err.message || "Terjadi kesalahan saat menyimpan opsi cetak logo.");
+    } finally {
+      setIsTogglingLogo(false);
+    }
+  };
 
   const isFreePlan = tenant?.plan === "FREE";
   const isProPlan = tenant?.plan === "PRO";
@@ -332,9 +480,18 @@ export default function StoreSettingsPage() {
       <div className="p-6 sm:p-8 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/70 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-amber-400 to-amber-600 p-0.5 shadow-md shadow-amber-500/20 shrink-0">
-              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-amber-600 font-black text-xl">
-                {(tenant?.name || "T").charAt(0).toUpperCase()}
+            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-amber-400 to-amber-600 p-0.5 shadow-md shadow-amber-500/20 shrink-0 overflow-hidden">
+              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-amber-600 font-black text-xl overflow-hidden">
+                {tenant?.logoUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={tenant.logoUrl}
+                    alt={tenant?.name || "Logo Toko"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (tenant?.name || "T").charAt(0).toUpperCase()
+                )}
               </div>
             </div>
             <div>
@@ -447,6 +604,216 @@ export default function StoreSettingsPage() {
                 ({user?.email || "-"})
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2.5. Kartu Pengaturan Logo Toko & Cetak Struk Penjualan */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_8px_32px_0_rgba(31,38,135,0.06)] ring-1 ring-inset ring-white/70 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-black shadow-2xs">
+              <ImageIcon className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900 leading-tight">
+                Logo Toko & Opsi Cetak Struk
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Unggah logo bisnis Anda dan atur apakah logo tampil di header struk kasir (Thermal ESC/POS & Browser Print).
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Switch Tampilkan Logo di Struk */}
+          <div className="flex items-center gap-3 bg-slate-50/80 px-4 py-2 rounded-2xl border border-slate-200/60 self-start sm:self-auto">
+            <span className="text-xs font-extrabold text-slate-700">
+              Cetak di Struk:
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleReceiptLogo}
+              disabled={isTogglingLogo || !canManage}
+              title={
+                !canManage
+                  ? "Memerlukan izin ubah pengaturan (settings:manage)"
+                  : receiptShowLogo
+                  ? "Klik untuk mematikan cetak logo di struk"
+                  : "Klik untuk mengaktifkan cetak logo di struk"
+              }
+              className={cn(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+                receiptShowLogo ? "bg-amber-500" : "bg-slate-300"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-xs",
+                  receiptShowLogo ? "translate-x-6" : "translate-x-1"
+                )}
+              />
+            </button>
+            <span
+              className={cn(
+                "text-xs font-black",
+                receiptShowLogo ? "text-amber-700" : "text-slate-400"
+              )}
+            >
+              {receiptShowLogo ? "AKTIF" : "NONAKTIF"}
+            </span>
+          </div>
+        </div>
+
+        {/* Content Area: Form Upload di Kiri & Live Thermal Preview di Kanan */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Kolom Kiri (7/12): Upload Input & Format Guidelines */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Rekomendasi Format Gambar */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 text-xs text-amber-900 flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1 leading-relaxed">
+                <p className="font-bold">
+                  Rekomendasi Format Gambar:
+                </p>
+                <p className="text-[11px] text-amber-800">
+                  Gunakan logo <strong>monokrom / hitam-putih</strong> dengan latar belakang transparan atau putih untuk hasil cetak thermal terbaik. Format: <strong>PNG, JPG, WebP</strong> (Maks 2 MB).
+                </p>
+              </div>
+            </div>
+
+            {/* Area File Picker / Drag & Drop Dropzone */}
+            <div className="relative border-2 border-dashed border-slate-200 hover:border-amber-400/80 rounded-3xl p-5 text-center transition-all bg-slate-50/50 hover:bg-amber-50/20">
+              <input
+                id="logoFileInput"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleSelectLogo}
+                disabled={!canManage || isUploadingLogo}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <div className="flex flex-col items-center justify-center space-y-2 pointer-events-none">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shadow-2xs">
+                  <Upload className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-800">
+                    Klik atau seret file gambar logo ke sini
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    PNG, JPG, atau WebP hingga 2 MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tombol Aksi Upload / Hapus */}
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              {logoFile && (
+                <button
+                  type="button"
+                  onClick={handleUploadLogo}
+                  disabled={isUploadingLogo || !canManage}
+                  className="px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black shadow-md shadow-slate-900/15 flex items-center gap-2 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploadingLogo ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5 text-amber-400" />
+                  )}
+                  <span>Simpan Logo Baru</span>
+                </button>
+              )}
+
+              {logoFile && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLogoFile(null);
+                    setLogoPreview(tenant?.logoUrl || null);
+                  }}
+                  disabled={isUploadingLogo}
+                  className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+              )}
+
+              {tenant?.logoUrl && !logoFile && (
+                <button
+                  type="button"
+                  onClick={handleDeleteLogo}
+                  disabled={isDeletingLogo || !canManage}
+                  className="px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeletingLogo ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                  <span>Hapus Logo</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Kolom Kanan (5/12): Live Thermal Receipt Simulation Preview */}
+          <div className="lg:col-span-5 bg-slate-100/80 p-4 rounded-3xl border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5 text-amber-600" />
+                <span>Simulasi Header Struk</span>
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-500 font-bold">
+                58mm / 80mm
+              </span>
+            </div>
+
+            {/* Kotak Kertas Thermal Miniatur */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/70 font-mono text-black text-center space-y-2 select-none">
+              {/* Logo Preview */}
+              {receiptShowLogo && (logoPreview || tenant?.logoUrl) ? (
+                <div className="py-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={logoPreview || tenant?.logoUrl}
+                    alt="Pratinjau Logo"
+                    className="mx-auto max-h-12 max-w-28 object-contain filter grayscale contrast-200"
+                  />
+                </div>
+              ) : (
+                <div className="py-1 text-[10px] text-slate-400 italic">
+                  {!receiptShowLogo
+                    ? "[Logo dinonaktifkan di struk]"
+                    : "[Belum ada logo terunggah]"}
+                </div>
+              )}
+
+              {/* Nama Toko */}
+              <div className="font-bold text-xs uppercase tracking-wider">
+                {storeName || tenant?.name || "NAMA TOKO ANDA"}
+              </div>
+
+              <div className="text-[10px] text-slate-500 leading-tight">
+                Jl. Contoh Alamat No. 123
+                <br />
+                Telp: 0812-3456-7890
+              </div>
+
+              {/* Garis Pemisah Thermal */}
+              <div className="border-b border-dashed border-slate-400 my-1.5" />
+
+              <div className="text-[9px] text-slate-400">
+                --------------------------------
+                <br />
+                1x MENU CONTOH &nbsp;&nbsp;&nbsp;&nbsp; Rp 25.000
+                <br />
+                TOTAL &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Rp 25.000
+              </div>
+            </div>
+
+            <p className="text-[10px] text-slate-500 text-center leading-relaxed">
+              *Tampilan di atas adalah ilustrasi header struk kertas yang akan keluar dari printer kasir.
+            </p>
           </div>
         </div>
       </div>

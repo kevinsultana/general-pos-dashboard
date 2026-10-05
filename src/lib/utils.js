@@ -63,6 +63,71 @@ export function parseThousand(val) {
 }
 
 /**
+ * Kompres gambar via Canvas API hingga di bawah `maxKB` kilobyte.
+ * Iteratif turunkan kualitas JPEG 0.05/step sampai target tercapai atau q < 0.15.
+ * PNG yang sudah kecil dikembalikan apa adanya jika sudah di bawah limit.
+ *
+ * @param {File} file          - File gambar input (PNG/JPEG/WebP)
+ * @param {number} maxKB       - Target ukuran maksimal dalam KB (default 300)
+ * @returns {Promise<File>}    - File terkompresi
+ */
+export async function compressImage(file, maxKB = 300) {
+  const maxBytes = maxKB * 1024;
+  if (file.size <= maxBytes) return file; // sudah kecil, langsung pakai
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      // Skala dimensi proporsional jika lebar > 1200px
+      const MAX_DIM = 1200;
+      let { width, height } = img;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      let quality = 0.85;
+      const tryCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error('Gagal mengompres gambar.'));
+            if (blob.size <= maxBytes || quality < 0.15) {
+              resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              }));
+            } else {
+              quality = Math.max(quality - 0.05, 0.1);
+              tryCompress();
+            }
+          },
+          'image/jpeg',
+          quality,
+        );
+      };
+      tryCompress();
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Gagal membaca file gambar.'));
+    };
+    img.src = url;
+  });
+}
+
+/**
  * Formats a date to include time (ID format).
  * @param {Date|string} date
  * @returns {string}
