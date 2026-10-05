@@ -2,26 +2,32 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  X,
   Barcode,
   ArrowRight,
-  ShoppingBag,
   UserCheck,
   Phone,
   UtensilsCrossed,
+  ShoppingBag,
+  RotateCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../lib/api";
+import GlassModal from "../ui/GlassModal";
+import Badge from "../ui/Badge";
+import EmptyState from "../ui/EmptyState";
+import { fmt } from "../../lib/posUtils";
 
 /**
- * Modal scan barcode & antrean pesanan pelanggan (QR self-order).
+ * OrderScannerModal - Modal scan barcode & antrean pesanan masuk (QR self-order).
  *
- * Props:
- *   isOpen        – boolean, apakah modal ditampilkan
- *   onClose       – () => void
- *   pendingOrders – Array<order>, daftar pesanan pending dari server
- *   onSelectOrder – (order) => void  dipanggil saat kasir memilih / muat pesanan
- *   onRefresh     – () => void       dipanggil saat kasir tekan "Segarkan Antrean"
+ * Menggunakan GlassModal dengan estetika Modern Clean Glassmorphism.
+ *
+ * @param {object} props
+ * @param {boolean} props.isOpen - status buka/tutup modal
+ * @param {Function} props.onClose - callback()
+ * @param {Array} [props.pendingOrders=[]] - daftar pesanan pending dari server
+ * @param {Function} props.onSelectOrder - callback(order)
+ * @param {Function} props.onRefresh - callback() untuk segarkan antrean
  */
 export default function OrderScannerModal({
   isOpen,
@@ -91,40 +97,23 @@ export default function OrderScannerModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+    <GlassModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Scan Barcode & Antrean Pesanan"
+      description="Pindai barcode HP pelanggan atau pilih dari antrean QR self-order"
+      icon={<Barcode className="w-5 h-5 text-amber-500" />}
+      size="lg"
+    >
+      <div className="space-y-4">
 
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center">
-              <Barcode className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900">
-                Scan Barcode & Antrean Pesanan
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Pindai barcode HP pelanggan atau pilih antrean
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Input barcode scanner */}
-        <div className="space-y-1.5 shrink-0">
-          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+        {/* Input Barcode Scanner */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
             Scanner Barcode / Masukkan Kode Pesanan
           </label>
           <div className="relative flex items-center">
-            <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -136,156 +125,147 @@ export default function OrderScannerModal({
                   handleLookup(scanCode);
                 }
               }}
-              placeholder="Arahkan scanner atau ketik contoh: ORD-882194..."
-              className="w-full pl-10 pr-24 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-amber-500 font-mono text-xs font-bold text-slate-900 outline-none uppercase transition-all"
+              placeholder="Scan barcode atau ketik contoh: ORD-882194..."
+              className="w-full pl-10 pr-24 py-3 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 focus:bg-white dark:focus:bg-slate-800 focus:border-amber-400 font-mono text-xs font-black text-slate-900 dark:text-white outline-none uppercase transition-all shadow-xs"
             />
             <button
               type="button"
               disabled={isSearching}
               onClick={() => handleLookup(scanCode)}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all disabled:opacity-60"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white text-xs font-black transition-all active:scale-95 disabled:opacity-60 cursor-pointer shadow-xs"
             >
               {isSearching ? "Mencari..." : "Cari & Muat"}
             </button>
           </div>
-          <p className="text-[10px] text-slate-400">
-            Mendukung laser scanner USB/Bluetooth maupun ketik kode manual lalu
-            tekan Enter.
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+            Mendukung laser scanner USB/Bluetooth maupun ketik kode manual lalu tekan Enter.
           </p>
         </div>
 
-        {/* Daftar pesanan pending */}
-        <div className="space-y-2 overflow-y-auto pr-1 flex-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-extrabold text-slate-700 uppercase tracking-wider text-[11px]">
-              Pesanan Menunggu ({pendingOrders.length})
+        {/* Header List Pesanan */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px]">
+              Pesanan Menunggu
             </span>
-            <button
-              type="button"
-              onClick={onRefresh}
-              className="text-[11px] font-bold text-amber-700 hover:underline"
-            >
-              Segarkan Antrean
-            </button>
+            <Badge variant="primary" size="sm">
+              {pendingOrders.length}
+            </Badge>
           </div>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+          >
+            <RotateCw className="w-3.5 h-3.5" />
+            <span>Segarkan Antrean</span>
+          </button>
+        </div>
 
+        {/* Daftar Pesanan Pending */}
+        <div className="space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1">
           {pendingOrders.length === 0 ? (
-            <div className="p-8 rounded-2xl border border-dashed border-slate-200 text-center space-y-2">
-              <ShoppingBag className="w-7 h-7 text-slate-300 mx-auto" />
-              <p className="text-xs font-bold text-slate-500">
-                Tidak ada pesanan menggantung
-              </p>
-              <p className="text-[11px] text-slate-400">
-                Pesanan yang dibuat oleh pelanggan melalui QR menu meja akan
-                tampil di sini.
-              </p>
-            </div>
+            <EmptyState
+              icon={<ShoppingBag className="w-6 h-6 text-slate-400" />}
+              title="Tidak ada pesanan menunggu"
+              description="Pesanan yang dibuat oleh pelanggan melalui QR menu meja akan otomatis tampil di sini."
+            />
           ) : (
-            <div className="space-y-2.5">
-              {pendingOrders.map((ord, ordIdx) => {
-                const isRegistered = Boolean(ord.customer || ord.customerId);
-                const phoneDisplay =
-                  ord.customerPhone || ord.customer?.phone;
+            pendingOrders.map((ord, ordIdx) => {
+              const isRegistered = Boolean(ord.customer || ord.customerId);
+              const phoneDisplay = ord.customerPhone || ord.customer?.phone;
 
-                return (
-                  <div
-                    key={ord.id || ord.orderNumber || `pending-ord-${ordIdx}`}
-                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-300 transition-colors space-y-2.5"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-mono font-black text-slate-900 text-xs bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                            #{ord.orderNumber}
-                          </span>
-                          <span className="text-xs font-black text-slate-800 truncate">
-                            {ord.customerName}
-                          </span>
-                          {isRegistered ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                              <span>Pelanggan Terdaftar di DB</span>
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                              Tamu Baru
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px]">
-                          {phoneDisplay ? (
-                            <span className="font-bold text-slate-700 flex items-center gap-1 bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                              <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
-                              <span>{phoneDisplay}</span>
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 text-[10px]">
-                              Tanpa No. HP
-                            </span>
-                          )}
-                          <span className="text-slate-500 font-semibold flex items-center gap-1">
-                            {ord.orderType === "DINE_IN" ? (
-                              <>
-                                <UtensilsCrossed className="w-3 h-3 text-amber-600" />
-                                <span>
-                                  Dine-In{" "}
-                                  {ord.tableNumber
-                                    ? `(Meja ${ord.tableNumber})`
-                                    : ""}
-                                </span>
-                              </>
-                            ) : (
-                              <span>Takeaway</span>
-                            )}
-                            <span>·</span>
-                            <span>{ord.items?.length || 0} item</span>
-                          </span>
-                        </div>
+              return (
+                <div
+                  key={ord.id || ord.orderNumber || `pending-ord-${ordIdx}`}
+                  className="p-4 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 hover:border-amber-400/70 transition-all space-y-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs bg-slate-100 dark:bg-slate-700/80 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-600">
+                          #{ord.orderNumber}
+                        </span>
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                          {ord.customerName}
+                        </span>
+                        {isRegistered ? (
+                          <Badge variant="success" size="sm">
+                            <UserCheck className="w-3 h-3" />
+                            <span>Terdaftar</span>
+                          </Badge>
+                        ) : (
+                          <Badge variant="neutral" size="sm">
+                            Tamu
+                          </Badge>
+                        )}
                       </div>
 
-                      <div className="text-right shrink-0">
-                        <span className="font-black text-amber-700 text-sm block">
-                          Rp{" "}
-                          {parseFloat(ord.totalAmount).toLocaleString("id-ID")}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(ord.createdAt).toLocaleTimeString("id-ID", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px]">
+                        {phoneDisplay ? (
+                          <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-emerald-600" />
+                            <span>{phoneDisplay}</span>
+                          </span>
+                        ) : null}
+
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                          {ord.orderType === "DINE_IN" ? (
+                            <>
+                              <UtensilsCrossed className="w-3 h-3 text-amber-600" />
+                              <span>
+                                Dine-In {ord.tableNumber ? `(Meja ${ord.tableNumber})` : ""}
+                              </span>
+                            </>
+                          ) : (
+                            <span>Takeaway</span>
+                          )}
+                          <span>·</span>
+                          <span>{ord.items?.length || 0} item</span>
                         </span>
                       </div>
                     </div>
 
-                    {/* Tombol aksi */}
-                    <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleCancelOrder(ord)}
-                        className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline"
-                      >
-                        Batalkan
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onSelectOrder(ord);
-                          onClose();
-                        }}
-                        className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center gap-1 shadow-xs active:scale-95 transition-all"
-                      >
-                        <span>Muat ke Keranjang</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
+                    <div className="text-right shrink-0">
+                      <span className="font-black text-amber-700 dark:text-amber-400 text-sm block">
+                        {fmt(ord.totalAmount)}
+                      </span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        {new Date(ord.createdAt).toLocaleTimeString("id-ID", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Tombol Aksi */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCancelOrder(ord)}
+                      className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                    >
+                      Batalkan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectOrder(ord);
+                        onClose();
+                      }}
+                      className="min-h-9 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+                    >
+                      <span>Muat ke Keranjang</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
-    </div>
+    </GlassModal>
   );
 }

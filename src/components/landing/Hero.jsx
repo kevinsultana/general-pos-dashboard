@@ -1,11 +1,12 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ShieldCheck, Zap, Store, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import PosMockup from './PosMockup';
 
-export default function Hero() {
+function Hero() {
   const { t } = useLanguage();
 
   return (
@@ -82,3 +83,5 @@ export default function Hero() {
     </section>
   );
 }
+
+export default memo(Hero);

@@ -10,8 +10,6 @@ import {
   User,
   ShoppingBag,
   ArrowRight,
-  AlertCircle,
-  FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { confirmDeleteHeldCart } from "../../lib/alerts";

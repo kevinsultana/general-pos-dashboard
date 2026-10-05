@@ -1,42 +1,28 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import { promptHoldCart, confirmRecallCart } from "../../lib/alerts";
+import { useHoldCart } from "./useHoldCart";
 
 /**
- * useCart – mengelola state keranjang belanja POS.
+ * useCart – Mengelola state keranjang belanja kasir POS, kuantitas item, catatan, kaitan pesanan, dan kalkulasi diskon promo.
+ *
+ * Menggunakan useHoldCart untuk persistensi antrean pesanan tertahan ke localStorage.
+ * Seluruh rumus matematika (subtotal, diskon tipe PERCENTAGE/FIXED/scope, finalTotal) 100% identik dan zero-regression.
  *
  * @param {string|null} activeBranchId – ID cabang aktif (dari useAuth)
- *
- * Returns:
- *   cart               – Array<CartItem>
- *   editingNoteKey     – string|null, key item yang sedang diedit catatan
- *   setEditingNoteKey  – setter
- *   selectedCustomer   – objek customer terpilih | null
- *   setSelectedCustomer– setter
- *   activeOrder        – pesanan meja/self-order yang dikaitkan | null
- *   setActiveOrder     – setter
- *   appliedPromo       – promo yang diterapkan | null
- *   setAppliedPromo    – setter
- *   heldCarts          – Array<HeldCart>
- *   addToCart          – (product, variant) => void
- *   updateQty          – (key, delta) => void
- *   updateNotes        – (key, notes) => void
- *   removeItem         – (key) => void
- *   clearCart          – () => void
- *   holdCart           – () => Promise<void>
- *   recallCart         – (heldItem) => Promise<void>
- *   deleteHeldCart     – (id) => void
- *   handleSelectOrder  – (order) => void
- *   handleUnlinkOrder  – () => void
- *   cartSubtotal       – number
- *   cartCount          – number
- *   discountAmount     – number
- *   finalTotal         – number
+ * @returns {object}
  */
 export function useCart(activeBranchId) {
-  const HOLD_CART_KEY = `omnipos_held_carts_${activeBranchId || "default"}`;
+  // ── Sub-hook: Antrean tertahan (Hold Cart) ──────────────────────────────────
+  const {
+    heldCarts,
+    setHeldCarts,
+    holdCart: holdCartFn,
+    recallCart: recallCartFn,
+    deleteHeldCart,
+    resetHeldCartsForBranch,
+  } = useHoldCart(activeBranchId);
 
   // ── Core cart state ──────────────────────────────────────────────────────────
   const [cart, setCart] = useState([]);
@@ -47,42 +33,22 @@ export function useCart(activeBranchId) {
   // ── Promo state ──────────────────────────────────────────────────────────────
   const [appliedPromo, setAppliedPromo] = useState(null);
 
-  // ── Hold cart state (persisted ke localStorage) ──────────────────────────────
-  const [heldCarts, setHeldCarts] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(HOLD_CART_KEY) || "[]");
-    } catch {
-      return [];
-    }
-  });
+  // ── Reset cart saat cabang berganti ──────────────────────────────────────────
+  const resetForBranch = useCallback(
+    (newBranchId) => {
+      setCart([]);
+      setSelectedCustomer(null);
+      setActiveOrder(null);
+      setAppliedPromo(null);
+      setEditingNoteKey(null);
+      resetHeldCartsForBranch(newBranchId);
+    },
+    [resetHeldCartsForBranch]
+  );
 
-  // Sync heldCarts ke localStorage setiap kali berubah
-  useEffect(() => {
-    try {
-      localStorage.setItem(HOLD_CART_KEY, JSON.stringify(heldCarts));
-    } catch {
-      // localStorage unavailable (private mode)
-    }
-  }, [heldCarts, HOLD_CART_KEY]);
+  // ── Cart mutations ───────────────────────────────────────────────────────────
 
-  // Reset + reload saat cabang ganti
-  const resetForBranch = useCallback((newBranchId) => {
-    const newKey = `omnipos_held_carts_${newBranchId || "default"}`;
-    setCart([]);
-    setSelectedCustomer(null);
-    setActiveOrder(null);
-    setAppliedPromo(null);
-    setEditingNoteKey(null);
-    try {
-      setHeldCarts(JSON.parse(localStorage.getItem(newKey) || "[]"));
-    } catch {
-      setHeldCarts([]);
-    }
-  }, []);
-
-  // ── Cart helpers ─────────────────────────────────────────────────────────────
-
-  /** Tambah item ke cart. Jika varian sudah ada, qty +1. */
+  /** Tambah item ke cart. Jika varian sudah ada di keranjang, kuantitas +1. */
   const addToCart = useCallback((product, variant) => {
     const key = variant.id || `${product.id}-${variant.name}`;
     setCart((prev) => {
@@ -108,7 +74,7 @@ export function useCart(activeBranchId) {
     });
   }, []);
 
-  /** Update qty item. Item dengan qty <= 0 otomatis dihapus. */
+  /** Update qty item. Item dengan qty <= 0 otomatis dihapus dari keranjang. */
   const updateQty = useCallback((key, delta) => {
     setCart((prev) =>
       prev
@@ -117,92 +83,59 @@ export function useCart(activeBranchId) {
     );
   }, []);
 
-  /** Update catatan item. */
+  /** Update catatan khusus pada item tertentu. */
   const updateNotes = useCallback((key, notes) => {
     setCart((prev) =>
       prev.map((i) => (i.key === key ? { ...i, notes } : i))
     );
   }, []);
 
-  /** Hapus item dari cart. */
+  /** Hapus satu item dari keranjang. */
   const removeItem = useCallback((key) => {
     setCart((prev) => prev.filter((i) => i.key !== key));
   }, []);
 
-  /** Kosongkan seluruh cart + reset order & note. */
+  /** Kosongkan seluruh isi keranjang belanja. */
   const clearCart = useCallback(() => {
     setCart([]);
     setActiveOrder(null);
     setEditingNoteKey(null);
   }, []);
 
-  // ── Hold cart ────────────────────────────────────────────────────────────────
+  // ── Hold & Recall Cart Bridge ────────────────────────────────────────────────
 
-  /** Tahan keranjang aktif ke antrian (membuka dialog SweetAlert2). */
+  /** Tahan pesanan aktif ke daftar antrean. */
   const holdCart = useCallback(async () => {
-    if (cart.length === 0) {
-      toast.error("Keranjang kosong, tidak ada yang bisa ditahan.");
-      return;
-    }
-    const defaultLabel =
-      selectedCustomer?.customer?.name || `Antrean ${heldCarts.length + 1}`;
-    const result = await promptHoldCart(defaultLabel);
-    if (!result.isConfirmed || !result.value) return;
-
-    const { label, notes } = result.value;
-    const heldItem = {
-      id: `hold_${Date.now()}`,
-      label: label.trim() || `Antrean ${heldCarts.length + 1}`,
-      customerName:
-        selectedCustomer?.customer?.name || selectedCustomer?.label || "",
-      notes: notes || "",
-      heldAt: new Date().toISOString(),
-      items: [...cart],
-    };
-    setHeldCarts((prev) => [heldItem, ...prev]);
-    clearCart();
-    setAppliedPromo(null);
-    toast.success(`Keranjang "${heldItem.label}" berhasil ditahan.`, {
-      icon: "⏸️",
+    return holdCartFn(cart, selectedCustomer, () => {
+      clearCart();
+      setAppliedPromo(null);
     });
-  }, [cart, selectedCustomer, heldCarts.length, clearCart]);
+  }, [cart, selectedCustomer, holdCartFn, clearCart]);
 
-  /** Muat kembali antrean tertahan ke kasir. */
+  /** Muat kembali pesanan dari antrean tertahan ke keranjang aktif. */
   const recallCart = useCallback(
     async (heldItem) => {
-      if (cart.length > 0) {
-        const result = await confirmRecallCart(heldItem.label);
-        if (!result.isConfirmed) return;
-      }
-      setCart(heldItem.items);
-      setAppliedPromo(null);
-      if (heldItem.customerName) {
-        setSelectedCustomer({
-          value: null,
-          label: heldItem.customerName,
-          customer: { id: null, name: heldItem.customerName, phone: null },
-        });
-      } else {
-        setSelectedCustomer(null);
-      }
-      setActiveOrder(null);
-      setHeldCarts((prev) => prev.filter((h) => h.id !== heldItem.id));
-      toast.success(`Antrean "${heldItem.label}" dimuat ke kasir.`, {
-        icon: "▶️",
+      return recallCartFn(heldItem, cart.length, (item) => {
+        setCart(item.items || []);
+        setAppliedPromo(null);
+        if (item.customerName) {
+          setSelectedCustomer({
+            value: null,
+            label: item.customerName,
+            customer: { id: null, name: item.customerName, phone: null },
+          });
+        } else {
+          setSelectedCustomer(null);
+        }
+        setActiveOrder(null);
       });
     },
-    [cart.length]
+    [cart.length, recallCartFn]
   );
 
-  /** Hapus antrean tertahan tanpa memuat ke cart. */
-  const deleteHeldCart = useCallback((id) => {
-    setHeldCarts((prev) => prev.filter((h) => h.id !== id));
-    toast("Antrean dihapus dari daftar tertahan.", { icon: "🗑️" });
-  }, []);
+  // ── Order Kaitan (Self-Order / QR Meja) ───────────────────────────────────────
 
-  // ── Order (self-order / QR meja) ─────────────────────────────────────────────
-
-  /** Muat pesanan masuk (dari scanner / antrean) ke keranjang. */
+  /** Muat pesanan masuk dari QR self-order ke keranjang kasir. */
   const handleSelectOrder = useCallback((order) => {
     if (!order) return;
     setActiveOrder(order);
@@ -226,7 +159,7 @@ export function useCart(activeBranchId) {
     });
     setCart(newCart);
 
-    // Set customer otomatis
+    // Otomatis tentukan customer dari order
     const custData =
       order.customer ||
       (order.customerId
@@ -264,19 +197,21 @@ export function useCart(activeBranchId) {
     }
   }, []);
 
-  /** Lepas kaitan pesanan dari keranjang. */
+  /** Lepas kaitan pesanan dari keranjang kasir. */
   const handleUnlinkOrder = useCallback(() => {
     setActiveOrder(null);
     toast("Kaitan pesanan dilepas dari keranjang.", { icon: "ℹ️" });
   }, []);
 
-  // ── Computed values ──────────────────────────────────────────────────────────
+  // ── Kalkulasi Matematika Keranjang (100% Identik & Zero Regression) ──────────
   const cartSubtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const discountAmount = (() => {
     if (!appliedPromo) return 0;
     let eligibleSubtotal = cartSubtotal;
+
+    // Scope produk spesifik
     if (
       appliedPromo.scope === "PRODUCT" &&
       Array.isArray(appliedPromo.scopeVariantIds) &&
@@ -293,15 +228,18 @@ export function useCart(activeBranchId) {
           0
         );
     }
+
     if (appliedPromo.discountType === "PERCENTAGE") {
       const raw = (eligibleSubtotal * appliedPromo.discountValue) / 100;
       return appliedPromo.maxDiscount
         ? Math.min(raw, appliedPromo.maxDiscount)
         : raw;
     }
+
     if (appliedPromo.discountType === "FIXED") {
       return Math.min(appliedPromo.discountValue, eligibleSubtotal);
     }
+
     return Number(appliedPromo.estimatedSavings) || 0;
   })();
 
@@ -310,6 +248,7 @@ export function useCart(activeBranchId) {
   return {
     // State
     cart,
+    setCart,
     editingNoteKey,
     setEditingNoteKey,
     selectedCustomer,
@@ -319,6 +258,7 @@ export function useCart(activeBranchId) {
     appliedPromo,
     setAppliedPromo,
     heldCarts,
+    setHeldCarts,
     // Actions
     addToCart,
     updateQty,

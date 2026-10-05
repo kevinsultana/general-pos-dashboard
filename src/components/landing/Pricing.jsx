@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import { Check, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-export default function Pricing() {
+function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
   const { t } = useLanguage();
 
@@ -101,7 +101,7 @@ export default function Pricing() {
             </span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
-              className="relative w-14 h-7 rounded-full bg-slate-200/80 border border-slate-300/80 p-1 transition-colors focus:outline-none"
+              className="relative w-14 h-7 rounded-full bg-slate-200/80 border border-slate-300/80 p-1 transition-colors focus:outline-none cursor-pointer"
               aria-label="Toggle annual billing"
             >
               <div
@@ -208,3 +208,5 @@ export default function Pricing() {
     </section>
   );
 }
+
+export default memo(Pricing);

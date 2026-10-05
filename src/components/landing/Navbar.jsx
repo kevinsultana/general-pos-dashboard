@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import { Layers, Menu, X, ArrowRight, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 
-export default function Navbar() {
+function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
 
@@ -77,7 +77,7 @@ export default function Navbar() {
             <LanguageSwitcher />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 rounded-full bg-slate-100/80 border border-white text-slate-700 hover:text-slate-900"
+              className="p-1.5 rounded-full bg-slate-100/80 border border-white text-slate-700 hover:text-slate-900 cursor-pointer"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -120,3 +120,5 @@ export default function Navbar() {
     </header>
   );
 }
+
+export default memo(Navbar);

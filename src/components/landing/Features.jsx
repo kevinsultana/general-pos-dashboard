@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
   Zap,
   Wallet,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-export default function Features() {
+function Features() {
   const { t } = useLanguage();
 
   const features = [
@@ -151,3 +152,5 @@ export default function Features() {
     </section>
   );
 }
+
+export default memo(Features);

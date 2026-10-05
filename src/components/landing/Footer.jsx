@@ -1,9 +1,10 @@
 'use client';
 
+import { memo } from "react";
 import { Layers, ArrowUpRight } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
 
-export default function Footer() {
+function Footer() {
   const currentYear = new Date().getFullYear();
   const { t } = useLanguage();
 
@@ -180,3 +181,5 @@ export default function Footer() {
     </footer>
   );
 }
+
+export default memo(Footer);
