@@ -25,6 +25,8 @@ import api from "../../../lib/api";
 import { showConfirmDialog } from "../../../lib/alerts";
 import { compressImage } from "../../../lib/utils";
 import UnauthorizedState from "../../../components/common/UnauthorizedState";
+import CreatableSelect from "react-select/creatable";
+import { customStyles as selectStyles } from "../../../components/common/AppSelect";
 
 // ─── Formatter ────────────────────────────────────────────────────────────────
 const fmt = (n) =>
@@ -113,6 +115,8 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
   const [name, setName] = useState(editProduct?.name || "");
   const [description, setDescription] = useState(editProduct?.description || "");
   const [imageUrl, setImageUrl] = useState(editProduct?.imageUrl || "");
+  const [categoryId, setCategoryId] = useState(editProduct?.categoryId || "");
+  const [categories, setCategories] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isActive, setIsActive] = useState(
     editProduct ? editProduct.isActive !== false : true
@@ -140,6 +144,32 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
       : [{ name: "", costPrice: "", price: "" }]
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+  useEffect(() => {
+    api.get("/categories").then((res) => {
+      if (res?.success) setCategories(res.data || []);
+    }).catch(() => {});
+  }, []);
+
+  const handleCreateCategory = async (inputValue) => {
+    if (!inputValue || !inputValue.trim()) return;
+    setIsCreatingCategory(true);
+    const toastId = toast.loading(`Membuat kategori "${inputValue}"...`);
+    try {
+      const res = await api.post("/categories", { name: inputValue.trim() });
+      if (res?.success && res.data) {
+        setCategories((prev) => [...prev, res.data]);
+        setCategoryId(res.data.id);
+        toast.success(`Kategori "${inputValue}" berhasil dibuat!`, { id: toastId });
+      }
+    } catch (err) {
+      toast.error(err.message || "Gagal membuat kategori baru.", { id: toastId });
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
 
   const handleVariantChange = (idx, field, val) => {
     setVariants((prev) => prev.map((v, i) => (i === idx ? { ...v, [field]: val } : v)));
@@ -192,6 +222,7 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
       name: name.trim(),
       description: description.trim(),
       imageUrl: imageUrl ? imageUrl.trim() : null,
+      categoryId: categoryId || null,
       isActive,
     };
 
@@ -268,6 +299,41 @@ function ProductModal({ onClose, onSuccess, editProduct }) {
               placeholder="Contoh: Kopi Susu Kekinian"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-amber-400 text-xs font-semibold text-slate-900 outline-none transition-all"
               required
+            />
+          </div>
+
+          {/* Kategori Produk dengan CreatableSelect */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                Kategori Produk
+              </label>
+              <span className="text-[10px] text-amber-600 font-bold">Ketik untuk buat baru</span>
+            </div>
+            <CreatableSelect
+              instanceId="product-category-select"
+              isClearable
+              isDisabled={isCreatingCategory}
+              isLoading={isCreatingCategory}
+              onChange={(selected) => setCategoryId(selected ? selected.value : "")}
+              onCreateOption={handleCreateCategory}
+              options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              value={
+                categoryId
+                  ? {
+                      value: categoryId,
+                      label: categories.find((c) => c.id === categoryId)?.name || "Kategori Terpilih",
+                    }
+                  : null
+              }
+              placeholder="Pilih atau ketik untuk buat kategori baru..."
+              formatCreateLabel={(val) => `+ Buat kategori "${val}"`}
+              noOptionsMessage={() => "Ketik nama kategori untuk membuatnya"}
+              styles={{
+                ...selectStyles,
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
             />
           </div>
 
@@ -715,6 +781,11 @@ export default function ProductsPage() {
                           >
                             {product.name}
                           </p>
+                          {product.category?.name && (
+                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-black border border-purple-200 shrink-0">
+                              {product.category.name}
+                            </span>
+                          )}
                           {isOutOfStock && (
                             <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-black border border-rose-200 shrink-0">
                               HABIS

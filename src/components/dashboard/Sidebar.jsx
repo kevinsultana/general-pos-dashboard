@@ -98,6 +98,7 @@ export default function Sidebar({ onCloseMobile }) {
       '/dashboard/users',
       '/dashboard/branches',
       '/dashboard/products',
+      '/dashboard/categories',
       '/dashboard/customers',
       '/dashboard/qr-menu',
       '/dashboard/pos',
@@ -308,6 +309,14 @@ export default function Sidebar({ onCloseMobile }) {
     {
       group: t('dashboard.sidebar.groups.inventory'),
       items: [
+        {
+          name: t('dashboard.sidebar.items.categories') || 'Kategori Produk',
+          href: '/dashboard/categories',
+          icon: Layers,
+          badge: null,
+          isLocked: false,
+          permission: 'inventory:view',
+        },
         {
           name: t('dashboard.sidebar.items.products'),
           href: '/dashboard/products',
